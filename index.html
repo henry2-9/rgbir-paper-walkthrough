@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RGB-IR × OVD 論文走讀</title>
+<style>
+:root{--ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.7}
+.wrap{max-width:880px;margin:0 auto;padding:48px 20px}
+h1{font-size:1.9rem;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 36px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+a.card{display:block;border:1px solid var(--line);border-radius:12px;padding:20px;text-decoration:none;color:var(--ink);background:#fff;transition:box-shadow .15s,transform .15s}
+a.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-2px)}
+.card .icon{font-size:1.6rem}
+.card h2{font-size:1.1rem;margin:10px 0 6px}
+.card p{font-size:.9rem;color:var(--muted);margin:0}
+.note{margin-top:36px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:.85rem;color:var(--muted)}
+footer{margin-top:40px;font-size:.8rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>RGB-IR × OVD 論文走讀</h1>
+<p class="sub">Bridging the RGB-IR Gap × LLMDet — 用具體 tensor shape 與日常比喻走一遍資料流</p>
+<div class="cards">
+<a class="card" href="slides.html">
+<div class="icon">🎞</div>
+<h2>簡報模式</h2>
+<p>約 55 頁,一頁一個觀念。方向鍵翻頁(↓ 進子步驟)、Esc 看總覽、F 全螢幕。</p>
+</a>
+<a class="card" href="map.html">
+<div class="icon">🗺</div>
+<h2>架構地圖</h2>
+<p>Bridging RGB-IR 整條 pipeline 的可縮放資料流圖:三輸入 → 三模組 → 輸出,卡片可點回講解。</p>
+</a>
+<a class="card" href="walkthrough.html">
+<div class="icon">📖</div>
+<h2>白話版全文</h2>
+<p>完整講解(Part 0–7):地基、三個模組逐步拆解、LLMDet 訓練改革、自我檢驗題。</p>
+</a>
+</div>
+<div class="note">📚 本站內容為個人學習筆記,解說對象為已公開發表之論文(Bridging the RGB-IR Gap、LLMDet CVPR 2025)。非投資/學術建議,引用請以原論文為準。</div>
+<footer>Generated from my Obsidian vault · 2026</footer>
+</div>
+</body>
+</html>

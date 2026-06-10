@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>簡報模式 · RGB-IR × OVD 論文走讀</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/white.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<style>
+.reveal{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;font-size:30px}
+.reveal h1{font-size:1.7em}.reveal h2{font-size:1.25em}.reveal h3{font-size:1.05em}
+.reveal h1,.reveal h2,.reveal h3{text-transform:none;font-weight:600;letter-spacing:0}
+.reveal .slides section{text-align:left}
+.reveal ul,.reveal ol{display:block;margin-left:1em}
+.reveal li{margin:.25em 0}
+.reveal table{font-size:.68em;margin:0 auto}
+.reveal table th,.reveal table td{padding:.3em .55em}
+.reveal blockquote{font-size:.82em;width:95%;padding:.5em 1em;background:#f3f6fa;border-left:4px solid #7aa2d8;box-shadow:none;font-style:normal}
+.reveal code{font-size:.85em;background:#f0f1f3;border-radius:4px;padding:.05em .3em;color:#b93939}
+.reveal pre code{background:#f6f8fa;color:inherit}
+.reveal a{color:#0969da}
+.reveal .controls{color:#0969da}
+.reveal .progress{color:#0969da}
+#home{position:fixed;top:14px;left:16px;z-index:50;font-size:15px;text-decoration:none;color:#57606a;background:#ffffffcc;border:1px solid #d0d7de;border-radius:8px;padding:4px 10px}
+</style>
+</head>
+<body>
+<a id="home" href="index.html">⌂ 首頁</a>
+<div class="reveal">
+<div class="slides">
+<section data-markdown data-separator="^\r?\n---\r?\n$" data-separator-vertical="^\r?\n--\r?\n$">
+<script type="text/template">
+# 白話版架構解說 · 簡報版
+
+### Bridging RGB-IR × LLMDet 資料流走讀
+
+> 不講創新、不講為什麼牛,只回答一件事:
+> **「一張圖丟進去,它怎麼一步步變成偵測結果?」**
+
+全部用具體 shape + 日常比喻,公式只放最低限度。
+
+---
+
+## 🎯 Part 0:兩篇在做什麼?
+
+先確認 I/O(輸入輸出),再談架構:
+
+- **Bridging RGB-IR** — 三條輸入線:RGB + IR + 文字
+- **LLMDet** — 兩條輸入線:RGB + 文字
+
+--
+
+### Bridging RGB-IR 的 I/O
+
+- 輸入 ①:RGB 影像 `(3, 640, 640)` — 普通彩色照片
+- 輸入 ②:IR 影像 `(1, 640, 640)` — 熱感應圖,黑白
+- 輸入 ③:文字 prompt `["person", "car"]` — 你想找什麼
+- 輸出:bboxes + labels + scores(框的位置、對應類別、信心)
+
+--
+
+### LLMDet 的 I/O
+
+- 輸入 ①:RGB 影像 `(3, 800, 800)`
+- 輸入 ②:文字 prompt `["dog", "frisbee", ...]`
+- 輸出:同上,bbox + label + score
+- 訓練時還會多吃 caption,但**推論不用**
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%8E%AF%20Part%200%3A%E5%85%88%E7%A2%BA%E8%AA%8D%E4%BD%A0%E7%9C%8B%E7%9A%84%E5%85%A9%E7%AF%87%E5%9C%A8%E5%81%9A%E4%BB%80%E9%BA%BC">🎯 Part 0:先確認你看的兩篇在做什麼</a>
+
+---
+
+## 🧱 Part 1:最簡單的偵測器(地基)
+
+- 連 YOLO / Faster R-CNN 都沒底?先看這段
+- 已會可跳過,直接進 Part 2
+
+--
+
+### 1.1 tensor shape 標記法
+
+`(3, 640, 640)` = (通道 C, 高 H, 寬 W)
+
+> 🎯 想像成一疊紙:R / G / B 三張紙(通道)疊起來 = RGB 影像,
+> 每張紙都是 640×640 個數字,
+> 總共 3 × 640 × 640 = 1,228,800 個數字。
+
+--
+
+### 1.2 資料流(以「黑暗中偵測一個人」為例)
+
+- 輸入 `(3, 640, 640)` — 每像素只是 R/G/B 數值,電腦不知道「這像人」
+- backbone → `(256, 80, 80)` — 「這 8×8 區域長得像 60% 是人」
+- FPN → P3 / P4 / P5 — 遠 / 中 / 近的人各自被找
+- head → bbox `(120, 200, 180, 380)` + 〈person〉 + score `0.92`
+
+--
+
+### 1.3 為什麼 `(3, 640, 640)` 變 `(256, 80, 80)`?
+
+Backbone 同時做兩件事:
+
+- **縮小空間** 640 → 80(縮 8 倍):每 8×8 像素壓縮成 1 個位置
+- **加深通道** 3 → 256(加深 85 倍):R/G/B → 256 個高層級特徵
+
+> 🎯 衛星空照圖:原始 RGB = 像素級空照圖(看每塊草地的綠色強度);
+> backbone 後 = 鄉鎮級摘要 — 細節變少,語意變多。
+
+--
+
+### 1.4 為什麼要三種解析度?+ FPN
+
+一張圖裡物件大小差很多:🚌 公車超大、🐦 飛鳥超小,單一解析度搞不定。
+
+| 解析度 | 每格代表 | 適合偵測 |
+|---|---|---|
+| 80×80(P3) | 8×8 像素 | 小物件(遠處的鳥) |
+| 40×40(P4) | 16×16 像素 | 中等物件(汽車) |
+| 20×20(P5) | 32×32 像素 | 大物件 + 高層語意 |
+
+FPN:把 P3(細節有、語意弱)~ P5(語意強、細節弱)補成**每層細節 + 語意都有** ✓
+
+--
+
+### 1.7 普通偵測器的瓶頸
+
+- 類別只能是訓練時看過的(80 類 COCO = 80 個固定 class id)
+- 換新類別 → 重訓
+- → 所以才有 **OVD**:把固定分類頭換成「跟文字算 cosine 相似度」,類別可任意
+
+--
+
+### ✅ Part 1 自我檢驗
+
+1. `(256, 80, 80)` 第一個 256 是什麼意思?(通道 / 高 / 寬?)
+2. 為什麼要用三種解析度,不用一種?
+3. `(3, 640, 640)` → `(256, 80, 80)` 空間縮幾倍?通道加幾倍?
+4. FPN 在偵測器哪個位置?它修補了什麼問題?
+
+--
+
+### Part 1 完
+
+4 題都答得出來 = 懂了 90%,放心進 Part 2。
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%A7%B1%20Part%201%3A%E5%85%88%E5%BC%84%E6%87%82%E3%80%8C%E6%9C%80%E7%B0%A1%E5%96%AE%E7%9A%84%E5%81%B5%E6%B8%AC%E5%99%A8%E3%80%8D%28%E5%9C%B0%E5%9F%BA%29">🧱 Part 1:先弄懂「最簡單的偵測器」(地基)</a>
+
+---
+
+## 📦 Part 2:Bridging RGB-IR 鳥瞰
+
+三條輸入線,各自先變成特徵:
+
+- RGB `(3, 640, 640)` → CSPDarknet → `X_rgb (256, 80, 80)`
+- IR `(1, 640, 640)` → LiteDCTGhost(模組 ③)→ `X_ir (256, 80, 80)`
+- Text 〈person, car〉→ CLIP ViT-B/32(凍結)→ `T (2, 512)`
+
+--
+
+### 三個模組怎麼接
+
+- **模組 ① Semantic-Bridge Fusion(核心)**:三個東西全部丟進去 → `F_fuse (256, 80, 80)`
+- **模組 ② Bidirectional Alignment(錦上添花)**:文字↔視覺互相更新
+- **Detection Head**:cosine 比相似度 → `[bbox, label, score]`
+
+> 只記住「三條輸入線 → ① 融合 → ② 對齊」,**60% 的論文你就懂了**。
+
+--
+
+### Part 2 完
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%93%A6%20Part%202%3ABridging%20RGB-IR%20%E6%95%B4%E9%AB%94%E6%9E%B6%E6%A7%8B%E9%B3%A5%E7%9E%B0">📦 Part 2:Bridging RGB-IR 整體架構鳥瞰</a>
+
+---
+
+## 🔬 Part 3:模組 ① Semantic-Bridge Fusion
+
+> 整篇論文最複雜的就這一塊,搞懂這個其他都簡單。
+
+場景設定(後面所有 Step 都用這個):
+
+- `X_rgb (256, 80, 80)` — RGB 經 CSPDarknet 的特徵
+- `X_ir (256, 80, 80)` — IR 經 LiteDCTGhost 的特徵
+- `T (2, 512)` — CLIP 編 `["person", "car"]` 出來
+
+--
+
+### 3.0 要解決的問題
+
+- 黑暗中有個人、前面停一台車:RGB 黑黑的看不清,IR 看到兩個熱點
+- 笨方法:直接 concat 後 conv → 模型搞不清楚熱點是人還是車
+- 病因:RGB 跟 IR「視覺對視覺」溝通,**沒有共同語言**
+
+> 💡 本文方法:**文字 prompt = 共同語言。**
+> RGB 跟 IR 各自跟文字對話,結果同步就更可信。
+
+--
+
+### Step 1:文字變「問題」,視覺變「答案候選」
+
+- `Q = W_q · T` → `(2, 256)` — 變成「問題」
+- `K_rgb`、`K_ir` → 各 `(256, 80, 80)` — 可被搜尋的特徵庫
+- ⚠️ 關鍵設計:`Q` **只算一次,RGB 跟 IR 共用** — 這就是「橋」的意義
+
+> 🎯 `T` 像字典裡的定義;`Q` 是翻成問題形式:「我想找 person 在哪裡?」
+> `W_q` = 翻譯機,把 512 維文字 → 256 維視覺維度。
+
+--
+
+### Step 2:算「文字對每個位置的響應」
+
+- `A_rgb = σ(Q · K_rgbᵀ / √d)` → `(2, 6400)`(6400 = 80×80)
+- `A_rgb[0, :]` = 6400 個分數:「RGB 中每個位置像不像 person?」
+- 黑暗中的人:RGB 分數低(0.1),IR 熱影像分數高(0.8)
+- ⚠️ 用 sigmoid 不用 softmax:一張圖可同時有 person 跟 car,每類獨立判斷、不互斥
+
+--
+
+### ★ Step 3:Bi-Support 拆解(全文最關鍵!)
+
+- `M_cons = A_ir · A_rgb` — 共識(consensus)
+- `M_dis = A_ir · (1 - A_rgb)` — 差異(discrepancy)
+
+| 位置(看 person) | A_rgb | A_ir | M_cons | M_dis |
+|---|---|---|---|---|
+| A:亮處有人,雙方都看到 | 0.8 | 0.9 | **0.72**(強) | 0.18 |
+| B:黑暗區域,只有 IR 看到 | 0.1 | 0.85 | 0.085 | **0.765**(強) |
+
+無損身分式:`A_ir = M_cons + M_dis` → **IR 的所有響應被「無損地」拆成兩部分,沒丟資訊**。
+
+--
+
+### 🎯 Step 3 比喻:證人辦案
+
+> RGB 證人 = 一般目擊者(黑暗看不見就無能)
+> IR 證人 = 紅外攝影機(永遠在錄,但會誤判)
+>
+> 正常場景(雙證一致)→ `M_cons` 強 → **鐵證**
+> 黑暗場景(RGB 失效,IR 獨家)→ `M_dis` 強 → **可能是真線索,但要小心**
+
+--
+
+### Step 4:動態重校準 IR
+
+`X̃_ir = X_ir ⊙ (1 + β·M_cons) ⊙ (1 + α·M_dis)`(α、β 可學,各 0.5)
+
+- 位置 A(共識強):× 1.36 × 1.09 → IR 特徵**強化 48%**
+- 位置 B(差異強):× 1.04 × 1.38 → **強化 43%**(α 信任這個差異訊號)
+- 位置 C(背景,啥都沒響應):× 1 × 1 → **不變!**
+
+--
+
+### 💎 為什麼用 `(1 + x)` 不是 `x`?
+
+- 寫 `X_ir × β·M_cons`:沒響應處 = 0 × … = **0,IR 特徵被抹掉**
+- 寫 `X_ir × (1 + β·M_cons)`:沒響應處 = 1 × 1 = **1,特徵保留**
+- 這個 `1 +` 是設計魂:**確保「沒響應就不改」**
+- α 的特殊角色 = gate:模型自己學的「對差異訊號的信任度」
+
+--
+
+### Step 5:校準後的 IR 反過來引導 RGB
+
+1. 通道對齊:`X̃_ir^align = ψ(X̃_ir)`
+2. IR 算 spatial attention:`W_att = φ(X̃_ir^align)` → `(1, 80, 80)`
+3. RGB 被引導:`X̂_rgb = X_rgb ⊙ W_att` — IR 告訴 RGB「注意這裡!」
+4. 最終融合:`F_fuse = Conv([X̂_rgb, X̃_ir^align])`
+
+為什麼 IR 引導 RGB 而非反過來?→ **IR 在退化場景更穩定**(熱訊號不受黑暗影響),該當主導。
+
+--
+
+### Part 3 完
+
+一句話:文字 `Q` → 分別問 RGB / IR → 拆成 `M_cons` + `M_dis` → 校準 IR → 反引導 RGB → `F_fuse` ✓
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%94%AC%20Part%203%3A%E6%A8%A1%E7%B5%84%20%E2%91%A0%20Semantic-Bridge%20Fusion%28%E8%B6%85%E8%A9%B3%E7%B4%B0%E7%89%88%29">🔬 Part 3:模組 ① Semantic-Bridge Fusion(超詳細版)</a>
+
+---
+
+## 🔄 Part 4:模組 ② Bidirectional Alignment
+
+要解決的問題:
+
+- `F_fuse` 已是好的視覺特徵,但分類要拿它跟文字 embedding 算 cosine
+- 文字 `T` 還是 CLIP 預訓練的「通用 person」;你這張圖是「夜間瘦人」→ cosine 不準
+
+💡 解法:分類前讓 vision 跟 text **互相更新一次**(雙向)。
+
+--
+
+### Direction 1:Text → Vision(類別主動撈證據)
+
+- Cross-attention:`Q` = 文字、`K, V` = `F_fuse` → `A_t→v (2 × 6400)`(類別數 × 視覺位置數)
+- 每個類別**主動到視覺特徵中撈自己的證據區域**
+- ✓ t→v:類別當主考官,乾淨!每類撈自己的證據
+- ✗ v→t:每個 pixel 去類別中找最像的 → **背景 pixel 也 vote 把分數弄亂**
+- →「讓類別主動撈,而非讓 pixel 投票」
+
+--
+
+### Direction 2:Vision → Text(用視覺證據更新文字)
+
+- `U = Concat({Pool(P_i)})` — P3 / P4 / P5 各 pool 一個向量後 concat
+- `T̃ = update(T, U)` — 通用文字 → **場景特化文字**
+- 多尺度的意義:P3 細節(瘦、穿外套)/ P4 整體形態 / P5 人類概念確認
+
+> 💡 更新前 `T` 像「字典」;更新後 `T̃` 像「這次調查的具體嫌犯描述」。
+
+--
+
+### 為什麼要「雙向」?(閉環邏輯)
+
+- 只 t→v:文字 query 還是通用的 → 撈出來的證據可能不對
+- 只 v→t:文字更新了但視覺沒精煉 → 精準 query 配沒精煉的視覺 = 浪費
+- 雙向:① t→v 先精煉視覺 → ② v→t 再更新文字 → ③ 更準的分類(閉環,兩邊都最佳)
+- Head 拿 `z_v` 跟 `z_t̃` 算 cosine,**比 CLIP 原版 T 算出來更準**
+
+--
+
+### 🎓 模組 ① + ② 的「為什麼」總整理
+
+| 設計 | 為什麼這樣? |
+|---|---|
+| 文字當共享 Q | 避免 RGB↔IR cross-attn 的 O(N²) + 提供共同語言 |
+| sigmoid 不用 softmax | 一張圖可同時有多類物件,要獨立判斷 |
+| M_cons + M_dis 拆解 | 退化場景下 M_dis 救援(RGB 失效時 IR 仍能給訊號) |
+| (1 + βM) 不用 βM | 沒響應的地方原 IR 特徵保留 |
+| IR 引導 RGB / t→v / 雙向閉環 | IR 較穩當主導 / 避免 pixel 投票 / 兩邊都最佳 |
+
+--
+
+### ✅ 自我檢驗(模組 ① + ②)
+
+1. 為什麼 `Q` 只算一次?不能 RGB 跟 IR 各自算自己的 `Q` 嗎?
+2. 位置 D 上 `A_rgb = 0.5`、`A_ir = 0.5`,`M_cons` 跟 `M_dis` 各多少?
+3. 如果寫 `X_ir × βM_cons`(不加 1),會發生什麼?
+4. 為什麼 Text→Vision 比 Vision→Text 好?
+5. 單向 alignment 為什麼不夠?
+
+--
+
+### Part 4 完
+
+5 題都答得出來 = 懂了 95%,Part 5 跟 Part 6 都會很輕鬆。
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%94%84%20Part%204%3A%E6%A8%A1%E7%B5%84%20%E2%91%A1%20Bidirectional%20Alignment%28%E8%B6%85%E8%A9%B3%E7%B4%B0%E7%89%88%29">🔄 Part 4:模組 ② Bidirectional Alignment(超詳細版)</a>
+
+---
+
+## 🌡️ Part 5:模組 ③ LiteDCTGhost IR Backbone
+
+笨方法:直接拿 ResNet50 跑 IR
+
+- 24.20M 參數、34.18G FLOPs,mAP 卻只有 0.453(其實普普通通)
+- ResNet 的卷積核被訓練去抓 RGB 紋理 / 邊緣 / 顏色 → 對 IR 幫不上忙
+- → ResNet50 在 IR 上 = **大砲打蚊子**(模型容量浪費在它不擅長的事)
+
+--
+
+### 5.1 IR 訊號 = 低頻 + 高頻
+
+- IR 影像 = 熱輻射強度的灰階圖:紋理稀少、邊緣模糊(熱會擴散)、低頻熱分布占主導
+- **低頻**(整塊熱分布):「有沒有人 / 在哪個大致區域」
+- **高頻**(邊緣資訊):「人的形狀邊界精確在哪」
+- 笨方法:CNN 把兩者混著學 → IR 高頻弱,被低頻淹沒 → **邊緣偵測弱**
+
+--
+
+### 5.2 DCT 是什麼?
+
+> 🎯 合成樂器:一首歌 = 不同頻率的正弦波加起來(低音 = 鼓聲轟轟轟,高音 = 鈸聲嘶嘶嘶);
+> 一張圖 = 不同空間頻率的餘弦圖案加起來 —
+> 低頻 = 大塊變化緩慢(整片天空、人的軀幹);高頻 = 局部變化劇烈(邊緣、紋理、雜訊)。
+
+任何 8×8 影像 = **64 個基底圖案的加權和**,DCT 就是算出每個基底要多重。
+
+--
+
+### 5.3 怎麼用 DCT?可學頻率 mask
+
+- 淺層 IR 特徵 `(32, 160, 160)` → DCT → **shape 不變,值的意義變成頻率分量強度**
+- 可學 mask `M ∈ [0,1]^{H×W}`:靠左上高 = 留低頻、靠右下高 = 留高頻,分布完全可學
+- `X_ir^L = D⁻¹(M ⊙ X̂_ir^0)`、`X_ir^H = D⁻¹((1-M) ⊙ X̂_ir^0)`
+- 關鍵:`M + (1-M) = 1` → 兩分支**完整覆蓋所有頻率,沒丟資訊**
+
+--
+
+### 5.4 兩分支獨立編碼
+
+- `φ_L` 完全專注低頻 → 學「熱分布」;`φ_H` 完全專注高頻 → 不被低頻能量淹沒,學「邊緣輪廓」
+- `X̃_ir^0 = φ_L(X_ir^L) + φ_H(X_ir^H)` — 加性結合
+- 各自的 inductive bias 對齊各自的資料分布 → **1 + 1 > 2**
+
+--
+
+### 5.5–5.6 Ghost + SE
+
+- **Ghost**:conv 只算一半 channel,另一半用便宜的 depthwise「線性合成」→ 參數可減 ~50%(CNN 特徵很多是冗餘的)
+- **SE**:Global Avg Pool → 兩層 MLP → sigmoid → `(C, 1, 1)` 通道權重;重要 channel 放大、不重要的抑制
+
+> 🎯 Ghost = 不用每首歌都自己錄,**複製 + 微調**省成本;SE = 音響上每個喇叭的**音量旋鈕**。
+
+--
+
+### 5.7 完整資料流
+
+- IR `(1, 640, 640)` → 初始 conv 升通道 → `X_ir^0 (32, 160, 160)`
+- → DCT + 可學 mask 分頻 → 低 / 高頻各過 Ghost conv → 加總 → SE 通道校準
+- → 後續多層 Ghost conv + downsample
+- → 多尺度輸出 `[P3 (64, 80, 80), P4 (128, 40, 40), P5 (256, 20, 20)]` → 給模組 ① 用
+
+--
+
+### 5.8 性能對比 — 為什麼這麼省
+
+| Backbone | Params | FLOPs | mAP50 | mAP |
+|---|---:|---:|---:|---:|
+| ResNet50 | 24.20M | 34.18G | 0.853 | 0.453 |
+| **LiteDCTGhost** | **1.05M** | **6.49G** | **0.886** | **0.504** |
+| 降幅 / 提升 | **-95%** | **-81%** | **+3.3pp** | **+5.1pp** |
+
+- ResNet50 對 IR =「過參數化錯置」:24M 參數主要在學 IR 沒有的高頻紋理,沒用但會干擾
+- LiteDCTGhost 用對的 inductive bias(頻率分離),1M 參數精準命中 → 金句:**對的歸納偏誤 > 大模型暴力壓**
+
+--
+
+### 🎯 整段比喻:把熱感應圖當「錄音」聽
+
+> 低頻 = 低音(轟轟聲、整塊熱)— 是「**有沒有人**」的訊號;
+> 高頻 = 高音(嘶嘶聲、邊緣銳利度)— 是「**人的形狀**」的訊號。
+> 普通 backbone(ResNet)把它們**混著聽** → 學不好;
+> LiteDCTGhost **拆成兩個分支聽** → 各自最佳化。
+
+--
+
+### ✅ Part 5 自我檢驗
+
+1. 為什麼 IR 影像的主要訊號是低頻?
+2. DCT 把影像變成什麼?shape 變了嗎?
+3. 可學 mask `M` 在哪個域操作?(空間域還是頻域?)
+4. Ghost Module 怎麼省參數?
+5. 為什麼 1.05M 比 24.20M 強?
+
+--
+
+### Part 5 完
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%8C%A1%EF%B8%8F%20Part%205%3A%E6%A8%A1%E7%B5%84%20%E2%91%A2%20LiteDCTGhost%20IR%20Backbone%28%E8%B6%85%E8%A9%B3%E7%B4%B0%E7%89%88%29">🌡️ Part 5:模組 ③ LiteDCTGhost IR Backbone(超詳細版)</a>
+
+---
+
+## 🤖 Part 6:LLMDet — 訓練改革
+
+- LLMDet ≠ 設計新架構;LLMDet = **改訓練方式**
+- 「baseline detector 不變,加上 LLM 當訓練時的家教」
+
+> 如果你只記住一件事:**「LLM 當監督訊號,訓練後丟棄」**。
+
+--
+
+### 6.1 整體架構
+
+- 主體:MM Grounding DINO(現成偵測器,Swin + DETR)→ `[bbox, label, score]`
+- 訓練時額外路徑:image features(p4 + p5)/ object queries(正樣本,N=16 max)→ Projector → LLM
+- LLM:LLaVA-OneVision-0.5b(Qwen2-based,LoRA fine-tune)
+- 生成兩種 caption → 兩個 loss:`L_lm^image`、`L_lm^region`
+
+--
+
+### 6.2 雙任務 captioning(關鍵設計)
+
+- **Task 1 Image-level**:p4 / p5 feature map → 長 caption(~115 字)
+- **Task 2 Region-level**:16 個正樣本 query(+ cross-attn 補資訊)→ 短 phrase(如 "young man")
+- Loss:LLM 生成 vs GT 的 cross-entropy
+
+| 只用 image-level | 只用 region-level | 兩者都用 |
+|---|---|---|
+| +0.6 AP | +0.0 AP(沒提升) | **+3.3 AP** ✓ 互補才解鎖 |
+
+--
+
+### 6.3 為什麼 LLM 監督比 hard label 強?
+
+- 普通監督:bbox + `class_id = 17`(= "dog")— 資訊量極低,只有 1 個 class id
+- caption 監督:品種、年紀、屬性、背景脈絡、遮擋語意全都被迫學到
+- → **Caption 是「rich label」,比 class id 多 100 倍資訊**
+- 精神類似知識蒸餾(KD),但用 caption 而非 logit;LLM 跟 teacher 一樣最後丟掉
+
+--
+
+### 6.4 兩階段訓練
+
+- **Step 1 Projector 預對齊**:凍結 detector + LLM,只訓 projector(LSC-558k captioning)
+- **Step 2 End-to-End Co-Training**:解凍 detector + projector + LLM(LoRA),凍結 Swin;150k 步 ~2 天
+- 為什麼分兩步?不先對齊就 end-to-end,**梯度會搞壞兩邊的預訓練知識**
+- 全部 loss:`L = L_align + L_box + L_lm^image + L_lm^region`
+
+--
+
+### 6.5 GroundingCap-1M(資料是另一半關鍵)
+
+- COCO 210k + V3Det 166k + GoldG 437k + LCS 307k = **1.12M**
+- caption 不是人工標,是 Qwen2-VL-72b 自動生,平均每張 ~115 字
+- ablation:Qwen2-VL-72b 生 → AP_r 38.6;LLaVA-7B 生 → 33.5(掉 5.1pp)
+- → **caption 品質直接決定 OVD 效果**
+
+--
+
+### 6.6 推論時的關鍵 trick
+
+- 推論時:✓ MM Grounding DINO 跑;✗ Projector 丟掉;✗ LLM 完全不執行
+- 推論成本 = 100% 純 MM-GDINO = **0% 額外開銷**
+
+> 💎 LLMDet 最 sexy 的設計:「訓練時用,推論時白嫖」。
+
+--
+
+### ✅ Part 6 自我檢驗
+
+1. LLMDet 跟 MM-GDINO 架構差在哪?(換成另一個 detector 行嗎?)
+2. 為什麼推論時 LLM 可以丟掉,還能享受其好處?
+3. 單獨用 region-level captioning 為什麼沒幫助?
+4. 為什麼要兩階段訓練,不能一次 end-to-end?
+5. LLM caption 比起 class id 的「資訊量優勢」是什麼?
+
+--
+
+### Part 6 完 — 帶走的思路
+
+真正的 contribution 是**方法論**:任何模型都可以接 LLM 當 co-train 家教,推論時丟。
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%A4%96%20Part%206%3ALLMDet%20%E2%80%94%20%E8%A8%93%E7%B7%B4%E6%94%B9%E9%9D%A9%28%E8%B6%85%E8%A9%B3%E7%B4%B0%E7%89%88%29">🤖 Part 6:LLMDet — 訓練改革(超詳細版)</a>
+
+---
+
+## 🎓 Part 7:六題總檢驗
+
+> 先不看任何資料回答。答不出來 = 那塊還沒懂,回去看對應 Part。
+
+1. Bridging RGB-IR 的輸入有幾個?各是什麼形狀?(Part 0)
+2. 為什麼文字 query Q 兩個模態共用?不能各算各的嗎?(Part 3 Step 1)
+3. M_cons 跟 M_dis 物理意義各是什麼?(Part 3 Step 3)
+4. 為什麼用 `(1 + βM)` 而不是 `βM`?(Part 3 Step 4)
+5. LiteDCTGhost 參數比 ResNet50 少 95% 反而精度更高,為什麼?(Part 5)
+6. LLMDet 推論時 LLM 還在嗎?為什麼?(Part 6)
+
+--
+
+### 🎯 學習路徑建議
+
+| 程度 | 該做的事 |
+|---|---|
+| 看完還是糊 | 只讀 Part 0 + Part 2,先建立「I/O + 鳥瞰圖」的心智模型 |
+| 大概懂但細節糊 | 讀 Part 3 走一遍 shape,然後翻回原 paper 對照 Eq.1-Eq.8 |
+| 想實作 | 讀 Part 3 + Part 4 + 直接看 GitHub code |
+| 想往下研究 | 讀完所有 Part + 回到 關聯_RGB-IR Bridge × LLMDet 思考 synthesis |
+
+--
+
+### 💬 卡住怎麼辦?
+
+1. 第一次卡 → 跳到下一段繼續讀,通常後面會解釋
+2. 第二次卡 → 拿紙筆把那段抄一遍 + 自己畫 shape 流程
+3. 第三次卡 → 找 YouTube(關鍵字:`open vocabulary detection`、`grounding DINO explained`)
+4. 第四次卡 → 跟我說具體段落 / 公式,我用更白話再翻一次
+
+> 看不懂不是你笨。**強的研究者也都是看 3-5 遍才懂的。**
+
+📖 詳細版:<a href="walkthrough.html#%F0%9F%8E%93%20Part%207%3A%E4%BD%A0%E7%9C%8B%E5%AE%8C%E6%87%89%E8%A9%B2%E8%83%BD%E5%9B%9E%E7%AD%94%E7%9A%84%206%20%E5%80%8B%E6%AA%A2%E9%A9%97%E9%A1%8C">🎓 Part 7:你看完應該能回答的 6 個檢驗題</a>
+
+</script>
+</section>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/highlight/highlight.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  width: 1150,
+  height: 760,
+  margin: 0.05,
+  transition: 'slide',
+  slideNumber: 'c/t',
+  plugins: [RevealMarkdown, RevealHighlight]
+});
+</script>
+</body>
+</html>

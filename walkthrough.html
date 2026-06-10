@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>白話版全文 · RGB-IR × OVD 論文走讀</title>
+<style>
+:root{--ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.85}
+nav{position:sticky;top:0;z-index:40;background:#ffffffee;border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+nav .in{max-width:820px;margin:0 auto;padding:10px 20px;display:flex;gap:16px;font-size:14px}
+nav a{color:var(--muted);text-decoration:none}
+nav a:hover{color:var(--accent)}
+#content{max-width:820px;margin:0 auto;padding:30px 20px 90px}
+#content h1{font-size:1.7rem;border-bottom:1px solid var(--line);padding-bottom:.35em;margin-top:2.2em;scroll-margin-top:70px}
+#content h2{font-size:1.32rem;margin-top:1.9em;scroll-margin-top:70px}
+#content h3{font-size:1.08rem;margin-top:1.5em;scroll-margin-top:70px}
+#content blockquote{margin:1em 0;padding:.6em 1.1em;background:var(--bg);border-left:4px solid #7aa2d8;border-radius:0 8px 8px 0;color:#39424d}
+#content code{background:#f0f1f3;border-radius:5px;padding:.1em .35em;font-size:.88em;color:#b93939}
+#content pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto}
+#content pre.mermaid{background:none;border:none;text-align:center}
+#content pre code{background:none;color:inherit;padding:0}
+#content table{border-collapse:collapse;display:block;overflow-x:auto;margin:1em 0}
+#content th,#content td{border:1px solid var(--line);padding:.45em .8em;font-size:.92em}
+#content th{background:var(--bg)}
+#content img{max-width:100%}
+#content hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+#content a{color:var(--accent)}
+#loading{color:var(--muted);padding:60px 20px;text-align:center}
+</style>
+</head>
+<body>
+<nav><div class="in">
+<a href="index.html">⌂ 首頁</a>
+<a href="slides.html">🎞 簡報模式</a>
+<a href="map.html">🗺 架構地圖</a>
+</div></nav>
+<div id="content"><div id="loading">載入中…</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+const renderer = new marked.Renderer();
+renderer.heading = function (text, level, raw) {
+  const id = raw.trim();
+  return `<h${level} id="${id.replace(/"/g,'&quot;')}">${text}</h${level}>`;
+};
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+renderer.code = function (code, lang) {
+  if (lang === 'mermaid') return `<pre class="mermaid">${esc(code)}</pre>`;
+  return `<pre><code>${esc(code)}</code></pre>`;
+};
+marked.setOptions({renderer, mangle:false, headerIds:false, breaks:false, gfm:true});
+mermaid.initialize({startOnLoad:false, theme:'neutral'});
+fetch('walkthrough.md')
+  .then(r => r.text())
+  .then(async md => {
+    document.getElementById('content').innerHTML = marked.parse(md);
+    await mermaid.run({querySelector: '.mermaid'});
+    jumpToHash();
+  });
+function jumpToHash(){
+  if(!location.hash) return;
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView();
+}
+window.addEventListener('hashchange', jumpToHash);
+</script>
+</body>
+</html>
