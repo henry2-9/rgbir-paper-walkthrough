@@ -5,45 +5,348 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RGB-IR × OVD 論文走讀</title>
 <style>
-:root{--ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa}
+:root{
+  --ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa;
+  --red:#e93147;--orange:#ec7500;--yellow:#e0ac00;--green:#08b94e;--teal:#00bfbc;--purple:#7852ee;
+}
 *{box-sizing:border-box}
+html{scroll-behavior:smooth}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.7}
-.wrap{max-width:880px;margin:0 auto;padding:48px 20px}
-h1{font-size:1.9rem;margin:0 0 6px}
-.sub{color:var(--muted);margin:0 0 36px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-a.card{display:block;border:1px solid var(--line);border-radius:12px;padding:20px;text-decoration:none;color:var(--ink);background:#fff;transition:box-shadow .15s,transform .15s}
-a.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-2px)}
-.card .icon{font-size:1.6rem}
-.card h2{font-size:1.1rem;margin:10px 0 6px}
-.card p{font-size:.9rem;color:var(--muted);margin:0}
-.note{margin-top:36px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:.85rem;color:var(--muted)}
-footer{margin-top:40px;font-size:.8rem;color:var(--muted)}
+
+/* ===== 共用 nav ===== */
+nav.topnav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav.topnav .nin{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;gap:6px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+nav.topnav a{display:inline-block;padding:5px 12px;border-radius:8px;text-decoration:none;color:var(--muted);font-size:.9rem;transition:background .15s,color .15s}
+nav.topnav a:hover{background:var(--bg);color:var(--ink)}
+nav.topnav a.cur{color:var(--accent);background:rgba(9,105,218,.08);font-weight:600}
+
+.wrap{max-width:980px;margin:0 auto;padding:40px 20px}
+
+/* ===== 進場動畫 ===== */
+@keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{opacity:0;animation:riseIn .6s ease forwards;animation-delay:var(--d,0s)}
+
+/* ===== Hero ===== */
+.hero{text-align:center;margin-bottom:14px}
+.hero h1{font-size:clamp(1.6rem,4.5vw,2.3rem);margin:14px 0 6px;letter-spacing:.5px}
+.hero h1 .x{color:var(--accent)}
+.hero .sub{color:var(--muted);margin:0 0 8px;font-size:clamp(.88rem,2.6vw,1rem)}
+
+.pipewrap{position:relative;max-width:920px;margin:6px auto 36px;padding:8px 4px 2px}
+.pipewrap svg{width:100%;height:auto;display:block}
+svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;user-select:none}
+.pnode{cursor:pointer;outline:none;transition:transform .2s ease}
+.pnode:hover,.pnode:focus-visible{transform:translateY(-3px)}
+.pnode rect{transition:filter .2s ease,stroke-width .2s ease}
+.pnode:hover rect,.pnode:focus-visible rect{filter:brightness(.965);stroke-width:2.4}
+path.flow{fill:none;stroke-width:2;stroke-dasharray:7 7;stroke-opacity:.8;animation:flowmove 1s linear infinite}
+@keyframes flowmove{to{stroke-dashoffset:-28}}
+
+.svgtip{position:absolute;left:0;top:0;transform:translate(-50%,-100%);background:#1f2328;color:#fff;font-size:.78rem;line-height:1.5;padding:7px 11px;border-radius:8px;max-width:250px;pointer-events:none;opacity:0;transition:opacity .15s ease;z-index:20;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.svgtip.show{opacity:1}
+.svgtip::after{content:"";position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1f2328;border-bottom:none}
+
+/* ===== 入口卡 ===== */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;margin-bottom:44px}
+a.card{display:block;border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;text-decoration:none;color:var(--ink);background:#fff;transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease}
+a.card:hover,a.card:focus-visible{box-shadow:0 8px 22px rgba(0,0,0,.1);transform:translateY(-3px);border-color:#b6c0cc}
+.card h2{font-size:1.05rem;margin:12px 0 6px}
+.card p{font-size:.85rem;color:var(--muted);margin:0}
+.mini{height:58px;display:flex;align-items:center;justify-content:flex-start;position:relative}
+
+/* 簡報卡:頁面翻動 */
+.mini-pages{position:relative;width:58px;height:46px}
+.mini-pages .pg{position:absolute;inset:0;background:#fff;border:1.5px solid var(--orange);border-radius:6px}
+.mini-pages .pg.b2{transform:translate(5px,4px);opacity:.55}
+.mini-pages .pg.b3{transform:translate(10px,8px);opacity:.3}
+.mini-pages .pg.top{display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--orange);transform-origin:top center;background:#fff7ee}
+@keyframes pageflip{0%,18%{transform:rotateX(0)}48%,58%{transform:rotateX(-150deg)}88%,100%{transform:rotateX(0)}}
+.card:hover .mini-pages .pg.top,.card:focus-visible .mini-pages .pg.top{animation:pageflip 1.6s ease-in-out infinite}
+
+/* 地圖卡:節點脈動 */
+.mini-map{width:80px;height:50px}
+.mini-map circle.nd{transform-box:fill-box;transform-origin:center}
+@keyframes ndpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.55}}
+.card:hover .mini-map circle.nd,.card:focus-visible .mini-map circle.nd{animation:ndpulse 1.2s ease-in-out infinite}
+.mini-map circle.nd.d2{animation-delay:.2s}
+.mini-map circle.nd.d3{animation-delay:.4s}
+.mini-map circle.nd.d4{animation-delay:.6s}
+
+/* 實驗室卡:滑桿滑動 */
+.mini-slider{width:90px}
+.mini-slider .track{position:relative;height:6px;border-radius:3px;background:#e3e8ee;margin:10px 0 14px}
+.mini-slider .track .fillba{position:absolute;left:0;top:0;bottom:0;width:30%;border-radius:3px;background:var(--teal);transition:width .3s}
+.mini-slider .thumb{position:absolute;top:50%;left:30%;width:16px;height:16px;border-radius:50%;background:#fff;border:2.5px solid var(--teal);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+@keyframes slideThumb{0%,100%{left:12%}50%{left:82%}}
+@keyframes slideFill{0%,100%{width:12%}50%{width:82%}}
+.card:hover .mini-slider .thumb,.card:focus-visible .mini-slider .thumb{animation:slideThumb 1.8s ease-in-out infinite}
+.card:hover .mini-slider .fillba,.card:focus-visible .mini-slider .fillba{animation:slideFill 1.8s ease-in-out infinite}
+
+/* 全文卡:進度條增長 */
+.mini-prog{width:90px}
+.mini-prog .bk{height:8px;border-radius:4px;background:#e3e8ee;overflow:hidden;margin:4px 0}
+.mini-prog .fl{height:100%;width:22%;border-radius:4px;background:linear-gradient(90deg,var(--purple),var(--accent))}
+.mini-prog .lbl{font-size:.68rem;color:var(--muted)}
+@keyframes progGrow{0%{width:8%}70%,100%{width:94%}}
+.card:hover .mini-prog .fl,.card:focus-visible .mini-prog .fl{animation:progGrow 1.5s ease-out infinite}
+
+/* ===== 30 秒看懂 ===== */
+.quick{border:1px solid var(--line);border-radius:16px;padding:24px 22px 22px;background:linear-gradient(180deg,#fbfcfd,#fff);margin-bottom:40px}
+.quick h2{margin:0 0 14px;font-size:1.2rem}
+.qbtns{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.qbtn{appearance:none;border:1.5px solid var(--line);background:#fff;color:var(--ink);padding:8px 18px;border-radius:999px;font-size:.92rem;font-family:inherit;cursor:pointer;transition:all .18s ease}
+.qbtn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.qbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.qpanel{display:none;font-size:.95rem;color:var(--ink)}
+.qpanel.on{display:block;animation:riseIn .35s ease}
+.qpanel p{margin:0 0 10px}
+.qpanel p:last-child{margin-bottom:0}
+.num{font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap}
+.num.g{color:var(--green);background:rgba(8,185,78,.1)}
+.num.o{color:var(--orange);background:rgba(236,117,0,.1)}
+.num.p{color:var(--purple);background:rgba(120,82,238,.1)}
+.num.r{color:var(--red);background:rgba(233,49,71,.08)}
+
+/* ===== 頁尾 ===== */
+.note{margin-top:8px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:.85rem;color:var(--muted)}
+footer{margin-top:28px;font-size:.8rem;color:var(--muted)}
+
+@media (max-width:560px){
+  .wrap{padding:28px 14px}
+  .quick{padding:18px 14px 16px}
+  .qbtn{padding:7px 13px;font-size:.85rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
+
+<nav class="topnav" aria-label="站內導覽">
+  <div class="nin">
+    <a class="cur" href="index.html" aria-current="page">⌂ 首頁</a>
+    <a href="slides.html">🎞 簡報</a>
+    <a href="map.html">🗺 地圖</a>
+    <a href="playground.html">🧪 實驗室</a>
+    <a href="walkthrough.html">📖 全文</a>
+  </div>
+</nav>
+
 <div class="wrap">
-<h1>RGB-IR × OVD 論文走讀</h1>
-<p class="sub">Bridging the RGB-IR Gap × LLMDet — 用具體 tensor shape 與日常比喻走一遍資料流</p>
+
+<!-- ===== Hero ===== -->
+<header class="hero">
+  <h1 class="anim" style="--d:0s">RGB-IR <span class="x">×</span> OVD 論文走讀</h1>
+  <p class="sub anim" style="--d:.15s">Bridging the RGB-IR Gap × LLMDet — 用具體 tensor shape 與日常比喻走一遍資料流</p>
+</header>
+
+<div class="pipewrap" id="pipewrap">
+  <svg viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline 縮影:RGB、IR、文字 prompt 三輸入流向模組一融合、模組二對齊、偵測頭,最後輸出 bbox、label、score">
+    <defs>
+      <marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 Z" fill="#08b94e"/></marker>
+      <marker id="arrO" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 Z" fill="#ec7500"/></marker>
+      <marker id="arrY" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 Z" fill="#e0ac00"/></marker>
+      <marker id="arrP" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 Z" fill="#7852ee"/></marker>
+    </defs>
+
+    <!-- 連線(資料流動畫) -->
+    <g class="anim" style="--d:.55s">
+      <path class="flow" d="M142,66 C 188,66 188,142 228,142" stroke="#08b94e" marker-end="url(#arrG)"/>
+      <path class="flow" d="M142,162 C 188,162 188,160 228,160" stroke="#08b94e" marker-end="url(#arrG)"/>
+      <path class="flow" d="M142,258 C 188,258 188,178 228,178" stroke="#08b94e" marker-end="url(#arrG)"/>
+      <path class="flow" d="M362,160 L 412,160" stroke="#ec7500" marker-end="url(#arrO)"/>
+      <path class="flow" d="M547,160 L 597,160" stroke="#e0ac00" marker-end="url(#arrY)"/>
+      <path class="flow" d="M712,160 L 747,160" stroke="#7852ee" marker-end="url(#arrP)"/>
+    </g>
+
+    <!-- 三輸入(綠) -->
+    <g class="anim" style="--d:.1s">
+      <g class="pnode" tabindex="0" data-tip="普通彩色照片,shape (3,640,640),先經 CSPDarknet 抽成特徵 X_rgb。">
+        <rect x="22" y="40" width="120" height="52" rx="10" fill="#e6f7ec" stroke="#08b94e" stroke-width="1.8"/>
+        <text x="82" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">RGB 影像</text>
+        <text x="82" y="80" text-anchor="middle" font-size="10.5" fill="#57606a">(3, 640, 640)</text>
+      </g>
+    </g>
+    <g class="anim" style="--d:.25s">
+      <g class="pnode" tabindex="0" data-tip="熱感應灰階圖,shape (1,640,640),走自製輕量 backbone LiteDCTGhost(模組 ③)。">
+        <rect x="22" y="136" width="120" height="52" rx="10" fill="#e6f7ec" stroke="#08b94e" stroke-width="1.8"/>
+        <text x="82" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">IR 影像</text>
+        <text x="82" y="176" text-anchor="middle" font-size="10.5" fill="#57606a">(1, 640, 640)</text>
+      </g>
+    </g>
+    <g class="anim" style="--d:.4s">
+      <g class="pnode" tabindex="0" data-tip="你想找什麼,例如 [person, car],由凍結的 CLIP 編成文字 embedding T。">
+        <rect x="22" y="232" width="120" height="52" rx="10" fill="#e6f7ec" stroke="#08b94e" stroke-width="1.8"/>
+        <text x="82" y="254" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">文字 prompt</text>
+        <text x="82" y="272" text-anchor="middle" font-size="10.5" fill="#57606a">[person, car]</text>
+      </g>
+    </g>
+
+    <!-- 模組 ① 融合(橙) -->
+    <g class="anim" style="--d:.7s">
+      <g class="pnode" tabindex="0" data-tip="Semantic-Bridge Fusion:RGB、IR、文字三條線全部丟進去,動態融合成一份 F_fuse。整篇最核心。">
+        <rect x="230" y="122" width="132" height="76" rx="12" fill="#fff1e0" stroke="#ec7500" stroke-width="1.8"/>
+        <text x="296" y="152" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1f2328">模組 ① 融合</text>
+        <text x="296" y="172" text-anchor="middle" font-size="10" fill="#57606a">Semantic-Bridge</text>
+        <text x="296" y="186" text-anchor="middle" font-size="10" fill="#57606a">Fusion</text>
+      </g>
+    </g>
+
+    <!-- 模組 ② 對齊(黃) -->
+    <g class="anim" style="--d:.9s">
+      <g class="pnode" tabindex="0" data-tip="Bidirectional Alignment:文字 ↔ 視覺互相更新,讓 prompt 對齊你這張圖的場景。錦上添花。">
+        <rect x="415" y="122" width="132" height="76" rx="12" fill="#fbf4d8" stroke="#e0ac00" stroke-width="1.8"/>
+        <text x="481" y="152" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1f2328">模組 ② 對齊</text>
+        <text x="481" y="172" text-anchor="middle" font-size="10" fill="#57606a">Bidirectional</text>
+        <text x="481" y="186" text-anchor="middle" font-size="10" fill="#57606a">Alignment</text>
+      </g>
+    </g>
+
+    <!-- 偵測頭(紫) -->
+    <g class="anim" style="--d:1.1s">
+      <g class="pnode" tabindex="0" data-tip="Detection Head:region 特徵與文字 embedding 算 cosine 相似度,決定每個框是哪個詞。">
+        <rect x="600" y="122" width="112" height="76" rx="12" fill="#f0eafd" stroke="#7852ee" stroke-width="1.8"/>
+        <text x="656" y="155" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1f2328">偵測頭</text>
+        <text x="656" y="176" text-anchor="middle" font-size="10" fill="#57606a">cosine 比相似度</text>
+      </g>
+    </g>
+
+    <!-- 輸出(青) -->
+    <g class="anim" style="--d:1.3s">
+      <g class="pnode" tabindex="0" data-tip="最終輸出:bbox 框在哪、label 是什麼、score 多有信心。">
+        <rect x="749" y="117" width="96" height="86" rx="12" fill="#e0f7f7" stroke="#00bfbc" stroke-width="1.8"/>
+        <text x="797" y="141" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">輸出</text>
+        <text x="797" y="160" text-anchor="middle" font-size="10.5" fill="#57606a">bbox</text>
+        <text x="797" y="176" text-anchor="middle" font-size="10.5" fill="#57606a">label</text>
+        <text x="797" y="192" text-anchor="middle" font-size="10.5" fill="#57606a">score</text>
+      </g>
+    </g>
+  </svg>
+  <div class="svgtip" id="svgtip" role="tooltip"></div>
+</div>
+
+<!-- ===== 四張入口卡 ===== -->
 <div class="cards">
-<a class="card" href="slides.html">
-<div class="icon">🎞</div>
-<h2>簡報模式</h2>
-<p>約 55 頁,一頁一個觀念。方向鍵翻頁(↓ 進子步驟)、Esc 看總覽、F 全螢幕。</p>
-</a>
-<a class="card" href="map.html">
-<div class="icon">🗺</div>
-<h2>架構地圖</h2>
-<p>Bridging RGB-IR 整條 pipeline 的可縮放資料流圖:三輸入 → 三模組 → 輸出,卡片可點回講解。</p>
-</a>
-<a class="card" href="walkthrough.html">
-<div class="icon">📖</div>
-<h2>白話版全文</h2>
-<p>完整講解(Part 0–7):地基、三個模組逐步拆解、LLMDet 訓練改革、自我檢驗題。</p>
-</a>
+  <a class="card anim" style="--d:.5s" href="slides.html">
+    <div class="mini">
+      <div class="mini-pages" aria-hidden="true">
+        <div class="pg b3"></div>
+        <div class="pg b2"></div>
+        <div class="pg top">55 頁</div>
+      </div>
+    </div>
+    <h2>🎞 簡報模式</h2>
+    <p>約 55 頁,一頁一個觀念。方向鍵翻頁(↓ 進子步驟)、Esc 看總覽、F 全螢幕。</p>
+  </a>
+
+  <a class="card anim" style="--d:.62s" href="map.html">
+    <div class="mini">
+      <svg class="mini-map" viewBox="0 0 80 50" aria-hidden="true">
+        <path d="M10,12 L34,25 M10,38 L34,25 M34,25 L58,12 M34,25 L58,38 M58,12 L72,25 M58,38 L72,25" stroke="#d0d7de" stroke-width="1.5" fill="none"/>
+        <circle class="nd"    cx="10" cy="12" r="4.5" fill="#08b94e"/>
+        <circle class="nd d2" cx="10" cy="38" r="4.5" fill="#08b94e"/>
+        <circle class="nd d3" cx="34" cy="25" r="5"   fill="#ec7500"/>
+        <circle class="nd d4" cx="58" cy="12" r="4.5" fill="#e0ac00"/>
+        <circle class="nd d2" cx="58" cy="38" r="4.5" fill="#7852ee"/>
+        <circle class="nd d3" cx="72" cy="25" r="4.5" fill="#00bfbc"/>
+      </svg>
+    </div>
+    <h2>🗺 架構地圖</h2>
+    <p>整條 pipeline 的可縮放資料流圖:三輸入 → 三模組 → 輸出,卡片可點回講解。</p>
+  </a>
+
+  <a class="card anim" style="--d:.74s" href="playground.html">
+    <div class="mini">
+      <div class="mini-slider" aria-hidden="true">
+        <div class="track"><div class="fillba"></div><div class="thumb"></div></div>
+        <div class="track"><div class="fillba" style="width:60%"></div><div class="thumb" style="left:60%"></div></div>
+      </div>
+    </div>
+    <h2>🧪 互動實驗室</h2>
+    <p>親手拉滑桿玩懂三個模組:動態融合的 α/β 權重、IR 的低頻/高頻分離。</p>
+  </a>
+
+  <a class="card anim" style="--d:.86s" href="walkthrough.html">
+    <div class="mini">
+      <div class="mini-prog" aria-hidden="true">
+        <div class="bk"><div class="fl"></div></div>
+        <div class="lbl">Part 0 → Part 7</div>
+      </div>
+    </div>
+    <h2>📖 白話版全文</h2>
+    <p>完整講解(Part 0–7):地基、三個模組逐步拆解、LLMDet 訓練改革、自我檢驗題。</p>
+  </a>
 </div>
-<div class="note">📚 本站內容為個人學習筆記,解說對象為已公開發表之論文(Bridging the RGB-IR Gap、LLMDet CVPR 2025)。非投資/學術建議,引用請以原論文為準。</div>
-<footer>Generated from my Obsidian vault · 2026</footer>
+
+<!-- ===== 30 秒看懂 ===== -->
+<section class="quick anim" style="--d:.9s" aria-label="30 秒看懂">
+  <h2>⏱ 30 秒看懂</h2>
+  <div class="qbtns" role="tablist">
+    <button class="qbtn on" id="qb1" role="tab" aria-selected="true" aria-controls="qp1">問題是什麼?</button>
+    <button class="qbtn" id="qb2" role="tab" aria-selected="false" aria-controls="qp2">怎麼解?</button>
+    <button class="qbtn" id="qb3" role="tab" aria-selected="false" aria-controls="qp3">效果多好?</button>
+  </div>
+  <div class="qpanel on" id="qp1" role="tabpanel" aria-labelledby="qb1">
+    <p>任務是:丟進一張 RGB 彩照 <b class="num g">(3,640,640)</b>、一張 IR 熱影像 <b class="num g">(1,640,640)</b>、一句文字 prompt(如 person、car),要吐出 bbox + label + score——「想找什麼用講的」的開放詞彙偵測。</p>
+    <p>難在 IR 是另一種模態:單通道、紋理稀少、邊緣模糊(熱會擴散),跟 RGB 差距很大。直接拿 ResNet50 硬跑 IR 是「大砲打蚊子」——<b class="num r">24.20M 參數、34.18G FLOPs</b>,mAP 卻只有 <b class="num r">0.453</b>。</p>
+  </div>
+  <div class="qpanel" id="qp2" role="tabpanel" aria-labelledby="qb2">
+    <p>三個模組分工:<b style="color:var(--orange)">模組 ① Semantic-Bridge Fusion</b> 把 RGB、IR、文字三條線全丟進去,動態融合成一份 F_fuse;<b style="color:var(--yellow)">模組 ② Bidirectional Alignment</b> 讓文字 ↔ 視覺互相更新、對齊場景;<b style="color:var(--green)">模組 ③ LiteDCTGhost</b> 用 DCT 把 IR 拆成低頻(有沒有人)+ 高頻(形狀邊界)分開學,再靠 Ghost conv「便宜複製」省參數。</p>
+    <p><b style="color:var(--purple)">LLMDet</b> 則從訓練下手:讓 LLM 生成 image-level 長 caption + region-level 短語當監督訊號,推論時架構不變、<b class="num p">0% 額外開銷</b>。</p>
+  </div>
+  <div class="qpanel" id="qp3" role="tabpanel" aria-labelledby="qb3">
+    <p>IR backbone:LiteDCTGhost 只用 <b class="num g">1.05M 參數</b>(比 ResNet50 的 24.20M <b class="num g">砍 95%</b>)、FLOPs <b class="num g">6.49G,省 81%</b>,精度反而從 mAP 0.453 升到 <b class="num g">0.504(+5.1pp)</b>——對的歸納偏誤 &gt; 大模型暴力壓。</p>
+    <p>LLMDet 端:image + region 兩種 caption 監督合用帶來 <b class="num p">+3.3 AP</b>(單用 image 只 +0.6、單用 region +0.0);且 caption 品質直接決定效果——Qwen2-VL-72b 生的 caption 拿 <b class="num p">AP_r 38.6</b>,LLaVA-7B 只有 33.5。</p>
+  </div>
+</section>
+
+<!-- ===== 頁尾 ===== -->
+<div class="note anim" style="--d:1s">📚 本站內容為個人學習筆記,解說對象為已公開發表之論文(Bridging the RGB-IR Gap、LLMDet CVPR 2025)。非投資/學術建議,引用請以原論文為準。</div>
+<footer class="anim" style="--d:1.05s">Generated from my Obsidian vault · 2026</footer>
+
 </div>
+
+<script>
+// ===== SVG tooltip =====
+(function(){
+  var tip=document.getElementById('svgtip'),wrap=document.getElementById('pipewrap');
+  function show(n){
+    tip.textContent=n.dataset.tip;tip.classList.add('show');
+    var r=n.getBoundingClientRect(),w=wrap.getBoundingClientRect();
+    var x=r.left-w.left+r.width/2,y=r.top-w.top-8;
+    tip.style.left=x+'px';tip.style.top=y+'px';
+    // 防左右溢出
+    var tr=tip.getBoundingClientRect(),pad=6,dx=0;
+    if(tr.left<w.left+pad)dx=(w.left+pad)-tr.left;
+    else if(tr.right>w.right-pad)dx=(w.right-pad)-tr.right;
+    if(dx)tip.style.left=(x+dx)+'px';
+  }
+  function hide(){tip.classList.remove('show');}
+  document.querySelectorAll('.pnode').forEach(function(n){
+    n.addEventListener('mouseenter',function(){show(n);});
+    n.addEventListener('mouseleave',hide);
+    n.addEventListener('focus',function(){show(n);});
+    n.addEventListener('blur',hide);
+    n.addEventListener('touchstart',function(e){show(n);},{passive:true});
+  });
+  document.addEventListener('touchstart',function(e){
+    if(!e.target.closest('.pnode'))hide();
+  },{passive:true});
+})();
+
+// ===== 30 秒看懂切換 =====
+(function(){
+  var btns=document.querySelectorAll('.qbtn');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('on');x.setAttribute('aria-selected','false');});
+      document.querySelectorAll('.qpanel').forEach(function(p){p.classList.remove('on');});
+      b.classList.add('on');b.setAttribute('aria-selected','true');
+      document.getElementById(b.getAttribute('aria-controls')).classList.add('on');
+    });
+  });
+})();
+</script>
 </body>
 </html>

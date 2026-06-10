@@ -6,15 +6,57 @@
 <title>白話版全文 · RGB-IR × OVD 論文走讀</title>
 <style>
 :root{--ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa}
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.85}
-nav{position:sticky;top:0;z-index:40;background:#ffffffee;border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
-nav .in{max-width:820px;margin:0 auto;padding:10px 20px;display:flex;gap:16px;font-size:14px}
-nav a{color:var(--muted);text-decoration:none}
-nav a:hover{color:var(--accent)}
+
+/* ===== 頂部閱讀進度條 ===== */
+#progress{position:fixed;top:0;left:0;right:0;height:3px;background:var(--accent);transform-origin:0 50%;transform:scaleX(0);z-index:60;pointer-events:none}
+
+/* ===== 共用 nav(毛玻璃) ===== */
+nav.top{position:sticky;top:0;z-index:40;background:#ffffffe6;border-bottom:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+nav.top .in{max-width:1160px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;font-size:14px;flex-wrap:wrap}
+nav.top a{color:var(--muted);text-decoration:none;padding:3px 11px;border-radius:999px;transition:color .2s,background .2s}
+nav.top a:hover{color:var(--accent);background:rgba(9,105,218,.07)}
+nav.top a.current{color:var(--accent);font-weight:700;background:rgba(9,105,218,.1)}
+
+/* ===== 手機:☰ 目錄按鈕(nav 下方 sticky) ===== */
+#tocBar{position:sticky;top:43px;z-index:39;background:#ffffffe6;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:7px 16px;border-bottom:1px solid var(--line)}
+#tocToggle{font:inherit;font-size:13.5px;color:var(--ink);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 15px;cursor:pointer;box-shadow:0 1px 3px rgba(31,35,40,.07);transition:transform .2s,box-shadow .2s,color .2s}
+#tocToggle:hover{color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 10px rgba(9,105,218,.15)}
+@media(min-width:1100px){#tocBar{display:none}}
+
+/* ===== 手機:目錄抽屜 ===== */
+#backdrop{position:fixed;inset:0;background:rgba(15,23,42,.35);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:48}
+#drawer{position:fixed;top:0;left:0;bottom:0;width:min(78vw,300px);background:#fff;z-index:50;transform:translateX(-105%);transition:transform .3s ease;box-shadow:0 10px 36px rgba(31,35,40,.25);border-radius:0 16px 16px 0;overflow-y:auto;padding:14px 12px 30px;box-sizing:border-box}
+body.toc-open #backdrop{opacity:1;visibility:visible}
+body.toc-open #drawer{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:14.5px;padding:2px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:10px}
+#drawerClose{font:inherit;border:none;background:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px 8px;border-radius:8px;transition:background .2s,color .2s}
+#drawerClose:hover{background:var(--bg);color:var(--ink)}
+
+/* ===== 版面:桌機左側 sticky 目錄 + 內文 ===== */
+.layout{display:block}
+#tocSidebar{display:none}
+@media(min-width:1100px){
+  .layout{display:grid;grid-template-columns:250px minmax(0,862px);gap:34px;justify-content:center;padding:0 24px}
+  #tocSidebar{display:block;position:sticky;top:62px;align-self:start;max-height:calc(100vh - 82px);overflow-y:auto;padding:28px 4px 40px;animation:fadeUp .55s ease both}
+}
+.toc-head{font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700;margin:0 10px 8px}
+.toc-list{display:flex;flex-direction:column;gap:2px}
+.toc-item{display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border-radius:9px;color:var(--muted);text-decoration:none;font-size:13.5px;line-height:1.55;transition:background .2s,color .2s}
+.toc-item .dot{flex:none;width:7px;height:7px;border-radius:50%;background:#c9d3dd;margin-top:7px;transition:transform .25s,background .25s,box-shadow .25s}
+.toc-item:hover{background:rgba(9,105,218,.06);color:var(--accent)}
+.toc-item.active{color:var(--accent);font-weight:700;background:rgba(9,105,218,.08)}
+.toc-item.active .dot{background:var(--accent);transform:scale(1.45);box-shadow:0 0 0 3px rgba(9,105,218,.15)}
+
+/* ===== 內文(原樣保留) ===== */
 #content{max-width:820px;margin:0 auto;padding:30px 20px 90px}
-#content h1{font-size:1.7rem;border-bottom:1px solid var(--line);padding-bottom:.35em;margin-top:2.2em;scroll-margin-top:70px}
-#content h2{font-size:1.32rem;margin-top:1.9em;scroll-margin-top:70px}
-#content h3{font-size:1.08rem;margin-top:1.5em;scroll-margin-top:70px}
+#content.reveal{animation:fadeUp .55s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+#content h1{font-size:1.7rem;border-bottom:1px solid var(--line);padding-bottom:.35em;margin-top:2.2em;scroll-margin-top:96px}
+#content h2{font-size:1.32rem;margin-top:1.9em;scroll-margin-top:96px}
+#content h3{font-size:1.08rem;margin-top:1.5em;scroll-margin-top:96px}
+@media(min-width:1100px){#content h1,#content h2,#content h3{scroll-margin-top:70px}}
 #content blockquote{margin:1em 0;padding:.6em 1.1em;background:var(--bg);border-left:4px solid #7aa2d8;border-radius:0 8px 8px 0;color:#39424d}
 #content code{background:#f0f1f3;border-radius:5px;padding:.1em .35em;font-size:.88em;color:#b93939}
 #content pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto}
@@ -27,18 +69,56 @@ nav a:hover{color:var(--accent)}
 #content hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
 #content a{color:var(--accent)}
 #loading{color:var(--muted);padding:60px 20px;text-align:center}
+
+/* ===== 自我檢驗互動 ===== */
+li.quiz-q{cursor:pointer;border-radius:10px;padding:4px 8px;margin:2px 0;transition:background .2s}
+li.quiz-q:hover{background:#eef5fd}
+li.quiz-q .tap{font-size:.85em;opacity:.45;margin-left:6px;transition:opacity .2s,filter .2s;filter:grayscale(1)}
+li.quiz-q:hover .tap{opacity:.8}
+li.quiz-q.open .tap{opacity:1;filter:none}
+.quiz-hint{max-height:0;opacity:0;overflow:hidden;margin:0;transition:max-height .35s ease,opacity .3s ease,margin .3s ease}
+li.quiz-q.open .quiz-hint{max-height:140px;opacity:1;margin:9px 0 3px}
+.quiz-hint .qh-in{background:#f0f7ff;border:1px solid #c8def7;border-left:4px solid var(--accent);border-radius:10px;padding:9px 14px;font-size:.9em;color:#39424d;cursor:auto}
+.quiz-hint a{color:var(--accent);font-weight:700}
+
+/* ===== 回到頂部 ===== */
+#backTop{position:fixed;right:18px;bottom:22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--accent);font-size:19px;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(31,35,40,.16);opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .3s,transform .3s,visibility .3s,box-shadow .2s;z-index:45}
+#backTop.show{opacity:1;visibility:visible;transform:none}
+#backTop:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(9,105,218,.25)}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto!important}
+}
 </style>
 </head>
 <body>
-<nav><div class="in">
+<div id="progress" aria-hidden="true"></div>
+<nav class="top"><div class="in">
 <a href="index.html">⌂ 首頁</a>
-<a href="slides.html">🎞 簡報模式</a>
-<a href="map.html">🗺 架構地圖</a>
+<a href="slides.html">🎞 簡報</a>
+<a href="map.html">🗺 地圖</a>
+<a href="playground.html">🧪 實驗室</a>
+<a href="walkthrough.html" class="current" aria-current="page">📖 全文</a>
 </div></nav>
-<div id="content"><div id="loading">載入中…</div></div>
+<div id="tocBar"><button id="tocToggle" aria-expanded="false" aria-controls="drawer">☰ 目錄</button></div>
+<div id="backdrop"></div>
+<aside id="drawer" aria-label="目錄抽屜">
+  <div class="drawer-head"><span>📑 目錄</span><button id="drawerClose" aria-label="關閉目錄">✕</button></div>
+  <div class="toc-list" id="drawerList"></div>
+</aside>
+<div class="layout">
+  <aside id="tocSidebar" aria-label="本頁目錄">
+    <div class="toc-head">本頁目錄</div>
+    <div class="toc-list" id="sideList"></div>
+  </aside>
+  <div id="content"><div id="loading">載入中…</div></div>
+</div>
+<button id="backTop" aria-label="回到頂部" title="回到頂部">↑</button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
 <script>
+/* ===== Markdown 渲染(原樣保留:heading id = 原文、mermaid code block) ===== */
 const renderer = new marked.Renderer();
 renderer.heading = function (text, level, raw) {
   const id = raw.trim();
@@ -51,13 +131,20 @@ renderer.code = function (code, lang) {
 };
 marked.setOptions({renderer, mangle:false, headerIds:false, breaks:false, gfm:true});
 mermaid.initialize({startOnLoad:false, theme:'neutral'});
+
 fetch('walkthrough.md')
   .then(r => r.text())
   .then(async md => {
-    document.getElementById('content').innerHTML = marked.parse(md);
+    const content = document.getElementById('content');
+    content.innerHTML = marked.parse(md);
+    content.classList.add('reveal');
+    buildToc();
+    setupQuiz();
     await mermaid.run({querySelector: '.mermaid'});
     jumpToHash();
+    onScroll();
   });
+
 function jumpToHash(){
   if(!location.hash) return;
   const id = decodeURIComponent(location.hash.slice(1));
@@ -65,6 +152,111 @@ function jumpToHash(){
   if(el) el.scrollIntoView();
 }
 window.addEventListener('hashchange', jumpToHash);
+
+/* ===== 目錄(桌機 sidebar + 手機抽屜共用同一份清單) ===== */
+let h1s = [];
+function buildToc(){
+  h1s = [...document.querySelectorAll('#content h1')];
+  const html = h1s.map((h,i) =>
+    `<a class="toc-item" data-i="${i}" href="#${encodeURIComponent(h.id)}"><span class="dot"></span><span class="txt">${esc(h.textContent)}</span></a>`
+  ).join('');
+  document.getElementById('sideList').innerHTML = html;
+  document.getElementById('drawerList').innerHTML = html;
+}
+
+/* ===== 手機抽屜開關 ===== */
+const tocToggle = document.getElementById('tocToggle');
+function setDrawer(open){
+  document.body.classList.toggle('toc-open', open);
+  tocToggle.setAttribute('aria-expanded', String(open));
+}
+tocToggle.addEventListener('click', () => setDrawer(!document.body.classList.contains('toc-open')));
+document.getElementById('backdrop').addEventListener('click', () => setDrawer(false));
+document.getElementById('drawerClose').addEventListener('click', () => setDrawer(false));
+document.getElementById('drawerList').addEventListener('click', e => { if(e.target.closest('a')) setDrawer(false); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') setDrawer(false); });
+
+/* ===== 捲動:進度條 + scrollspy + 回到頂部 ===== */
+const progress = document.getElementById('progress');
+const backTop = document.getElementById('backTop');
+let ticking = false;
+function onScroll(){
+  if(ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => {
+    ticking = false;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - window.innerHeight;
+    progress.style.transform = `scaleX(${max > 0 ? Math.min(window.scrollY / max, 1) : 0})`;
+    backTop.classList.toggle('show', window.scrollY > window.innerHeight);
+    updateSpy();
+  });
+}
+window.addEventListener('scroll', onScroll, {passive:true});
+window.addEventListener('resize', onScroll);
+
+function updateSpy(){
+  if(!h1s.length) return;
+  let idx = 0;
+  for(let i = 0; i < h1s.length; i++){
+    if(h1s[i].getBoundingClientRect().top <= 120) idx = i; else break;
+  }
+  document.querySelectorAll('.toc-item').forEach(a => a.classList.toggle('active', +a.dataset.i === idx));
+  const side = document.getElementById('tocSidebar');
+  if(side.clientHeight){
+    const act = side.querySelector('.toc-item.active');
+    if(act){
+      const t = act.offsetTop;
+      if(t < side.scrollTop + 30) side.scrollTop = t - 30;
+      else if(t > side.scrollTop + side.clientHeight - 70) side.scrollTop = t - side.clientHeight + 70;
+    }
+  }
+}
+
+backTop.addEventListener('click', () => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({top:0, behavior: reduce ? 'auto' : 'smooth'});
+});
+
+/* nav 高度可能因換行而變,動態校正 ☰ 目錄列的 sticky top */
+function fixTocBarTop(){
+  const nav = document.querySelector('nav.top');
+  document.getElementById('tocBar').style.top = (nav.offsetHeight - 1) + 'px';
+}
+fixTocBarTop();
+window.addEventListener('resize', fixTocBarTop);
+
+/* ===== ✅ 自我檢驗互動化 ===== */
+function setupQuiz(){
+  const heads = [...document.querySelectorAll('#content h1, #content h2, #content h3')];
+  heads.filter(h => /自我檢驗|檢驗題/.test(h.textContent)).forEach(h => {
+    const lvl = +h.tagName[1];
+    let el = h.nextElementSibling;
+    while(el){
+      const m = el.tagName.match(/^H([1-6])$/);
+      if(m && +m[1] <= lvl) break;
+      if(el.tagName === 'OL' || el.tagName === 'UL'){
+        el.querySelectorAll(':scope > li').forEach(li => {
+          li.classList.add('quiz-q');
+          li.title = '點我顯示提示';
+          const tap = document.createElement('span');
+          tap.className = 'tap';
+          tap.textContent = '💡';
+          li.appendChild(tap);
+          const hint = document.createElement('div');
+          hint.className = 'quiz-hint';
+          hint.innerHTML = '<div class="qh-in">💡 想好了?去 <a href="playground.html#quiz">🧪 實驗室測驗區</a> 對答案!</div>';
+          li.appendChild(hint);
+          li.addEventListener('click', e => {
+            if(e.target.closest('a') || e.target.closest('.quiz-hint')) return;
+            li.classList.toggle('open');
+          });
+        });
+      }
+      el = el.nextElementSibling;
+    }
+  });
+}
 </script>
 </body>
 </html>

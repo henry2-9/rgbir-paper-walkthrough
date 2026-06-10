@@ -5,20 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>架構地圖 · Bridging RGB-IR 走讀</title>
 <style>
-:root{--line:#d0d7de;--muted:#57606a}
+:root{--line:#d0d7de;--muted:#57606a;--accent:#0969da;--ink:#1f2328}
 html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;background:#fafbfc}
-#toolbar{position:fixed;top:12px;left:14px;z-index:60;display:flex;gap:8px;align-items:center}
-#toolbar a,#toolbar button{font-size:14px;color:var(--muted);background:#ffffffdd;border:1px solid var(--line);border-radius:8px;padding:5px 11px;text-decoration:none;cursor:pointer}
+/* ── 共用 nav(毛玻璃)── */
+#topnav{position:fixed;top:0;left:0;right:0;z-index:90;display:flex;gap:4px;justify-content:center;align-items:center;padding:8px 10px;background:rgba(255,255,255,.74);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+#topnav a{font-size:13.5px;color:var(--muted);text-decoration:none;padding:5px 11px;border-radius:8px;transition:background .15s,color .15s}
+#topnav a:hover{background:rgba(9,105,218,.07);color:var(--accent)}
+#topnav a.cur{color:var(--accent);background:rgba(9,105,218,.1);font-weight:600}
+#toolbar{position:fixed;top:58px;left:14px;z-index:60;display:flex;gap:8px;align-items:center}
+#toolbar button{font-size:14px;color:var(--muted);background:#ffffffdd;border:1px solid var(--line);border-radius:8px;padding:5px 11px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.05);transition:transform .15s,box-shadow .15s}
+#toolbar button:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.08)}
+#tourbtn{position:fixed;top:58px;right:14px;z-index:60;font-size:14px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:10px;padding:7px 14px;cursor:pointer;box-shadow:0 3px 10px rgba(9,105,218,.3);transition:transform .15s,box-shadow .15s}
+#tourbtn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(9,105,218,.35)}
+body.touring #tourbtn{display:none}
 #hint{position:fixed;bottom:12px;left:14px;z-index:60;font-size:12px;color:var(--muted);background:#ffffffcc;border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+body.touring #hint{display:none}
 #viewport{width:100%;height:100%;cursor:grab;touch-action:none}
 #viewport.dragging{cursor:grabbing}
 #world{position:absolute;transform-origin:0 0}
-.node{position:absolute;border-radius:10px;border:2px solid;padding:10px 12px;font-size:13px;line-height:1.55;overflow:hidden;background:#fff}
+.node{position:absolute;border-radius:10px;border:2px solid;padding:10px 12px;font-size:13px;line-height:1.55;overflow:hidden;background:#fff;transition:transform .18s ease,box-shadow .18s ease,opacity .3s ease}
+.node:hover{transform:scale(1.03);box-shadow:0 8px 20px rgba(0,0,0,.12);z-index:5}
 .node a{color:#0969da;text-decoration:none}
 .node a:hover{text-decoration:underline}
 .node code{background:rgba(0,0,0,.06);border-radius:4px;padding:0 4px;font-size:12px}
-.group{position:absolute;border:2px dashed;border-radius:14px;background:transparent}
+.group{position:absolute;border:2px dashed;border-radius:14px;background:transparent;transition:opacity .3s ease}
 .group .glabel{position:absolute;top:-26px;left:8px;font-size:14px;font-weight:600;white-space:nowrap}
+.node.dim,.group.dim{opacity:.25}
+.node.focus{box-shadow:0 0 0 4px rgba(9,105,218,.35),0 0 28px 6px rgba(9,105,218,.3);z-index:6}
 .c1{border-color:#e93147;background:#fdf1f2}.g1{border-color:#e93147;color:#c22939}
 .c2{border-color:#ec7500;background:#fef6ec}.g2{border-color:#ec7500;color:#c46100}
 .c3{border-color:#e0ac00;background:#fdf9e9}.g3{border-color:#e0ac00;color:#a88100}
@@ -28,22 +41,62 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,BlinkMa
 svg{position:absolute;top:0;left:0;overflow:visible;pointer-events:none}
 .elabel{font-size:11px;fill:#57606a}
 .elabelbg{fill:#fafbfc}
+/* ── 資料流動畫 ── */
+.edgepath{stroke-dasharray:8 7;animation:flow 1.8s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-15}}
+.edge{transition:opacity .3s ease}
+.edge.dim{opacity:.15}
+body.touring .edgepath{animation-play-state:paused}
+body.touring .edge.hl .edgepath{animation-play-state:running}
+.edge.hl .edgepath{stroke:var(--accent);stroke-width:3}
+.edge.hov .edgepath{stroke:var(--accent);stroke-width:3.5}
+/* ── 進場動畫 ── */
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.node,.group{animation:pop .5s ease backwards}
+/* ── 導覽列 ── */
+#tourbar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:80;display:flex;gap:10px;align-items:center;padding:9px 14px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.13);max-width:calc(100vw - 24px);animation:pop .35s ease backwards}
+#tourbar[hidden]{display:none}
+#tourbar button{font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 11px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+#tourbar button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.1)}
+#tourbar button:disabled{opacity:.35;cursor:default}
+#tcount{font-size:13px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
+#ttitle{font-size:13.5px;color:var(--ink);max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){
+  .edgepath{animation:none}
+  .node,.group,#tourbar{animation:none}
+  .node,.group,.edge,#topnav a,#toolbar button,#tourbtn,#tourbar button{transition:none}
+}
 </style>
 </head>
 <body>
-<div id="toolbar">
+<nav id="topnav">
 <a href="index.html">⌂ 首頁</a>
+<a href="slides.html">🎞 簡報</a>
+<a href="map.html" class="cur" aria-current="page">🗺 地圖</a>
+<a href="playground.html">🧪 實驗室</a>
+<a href="walkthrough.html">📖 全文</a>
+</nav>
+<div id="toolbar">
 <button id="zin">＋</button>
 <button id="zout">－</button>
 <button id="zfit">適合視窗</button>
 </div>
+<button id="tourbtn">▶ 開始導覽</button>
 <div id="hint">拖曳平移 · 滾輪/雙指縮放 · 點卡片連結跳到對應講解</div>
 <div id="viewport"><div id="world"><svg id="edges"></svg></div></div>
+<div id="tourbar" hidden>
+<button id="tprev" aria-label="上一步">←</button>
+<span id="tcount">1/19</span>
+<span id="ttitle"></span>
+<button id="tnext" aria-label="下一步">→</button>
+<button id="tend" aria-label="結束導覽">✕</button>
+</div>
 <script>
 const data = {"nodes": [{"id": "inRGB", "type": "text", "x": 0, "y": -280, "width": 280, "height": 160, "color": "4", "html": "🖼 <strong>RGB 影像</strong><br><code>(3, 640, 640)</code><br>彩色照片:細節多,但黑暗就失效<br><br><a href=\"walkthrough.html#%F0%9F%8E%AF%20Part%200%3A%E5%85%88%E7%A2%BA%E8%AA%8D%E4%BD%A0%E7%9C%8B%E7%9A%84%E5%85%A9%E7%AF%87%E5%9C%A8%E5%81%9A%E4%BB%80%E9%BA%BC\">🗣 白話版</a>"}, {"id": "inIR", "type": "text", "x": 0, "y": -40, "width": 280, "height": 160, "color": "4", "html": "🌡 <strong>IR 影像</strong><br><code>(1, 640, 640)</code><br>熱感應灰階圖:黑暗照看,但紋理弱、邊緣糊<br><br><a href=\"walkthrough.html#%F0%9F%8E%AF%20Part%200%3A%E5%85%88%E7%A2%BA%E8%AA%8D%E4%BD%A0%E7%9C%8B%E7%9A%84%E5%85%A9%E7%AF%87%E5%9C%A8%E5%81%9A%E4%BB%80%E9%BA%BC\">🗣 白話版</a>"}, {"id": "inTXT", "type": "text", "x": 0, "y": 200, "width": 280, "height": 160, "color": "4", "html": "💬 <strong>類別文字 Prompt</strong><br><code>[\"person\", \"car\"]</code>(M=2)<br>想找什麼自己說 → open-vocab 的入口<br><br><a href=\"walkthrough.html#%F0%9F%8E%AF%20Part%200%3A%E5%85%88%E7%A2%BA%E8%AA%8D%E4%BD%A0%E7%9C%8B%E7%9A%84%E5%85%A9%E7%AF%87%E5%9C%A8%E5%81%9A%E4%BB%80%E9%BA%BC\">🗣 白話版</a>"}, {"id": "bbRGB", "type": "text", "x": 400, "y": -320, "width": 300, "height": 180, "color": "5", "html": "<strong>CSPDarknet</strong>(RGB backbone)<br>標準 YOLO backbone,通道 <code>[128, 256, 512]</code><br><code>(3,640,640)</code> → <code>X_rgb (256,80,80)</code><br><br><a href=\"walkthrough.html#%F0%9F%93%A6%20Part%202%3ABridging%20RGB-IR%20%E6%95%B4%E9%AB%94%E6%9E%B6%E6%A7%8B%E9%B3%A5%E7%9E%B0\">🗣 白話版</a>"}, {"id": "bbIR", "type": "text", "x": 400, "y": -40, "width": 320, "height": 220, "color": "5", "html": "<strong>LiteDCTGhost</strong>(模組③ IR 專用 backbone)<br>DCT 進頻域 + 可學 mask 拆兩支:<strong>低頻=熱分布</strong>(有沒有人)、<strong>高頻=輪廓</strong>(形狀在哪),各走 Ghost conv(r=2,便宜合成一半 channel)再相加 + SE。通道 <code>[64,128,256]</code> 砍半,僅 <strong>1.05M 參數</strong><br><br><a href=\"walkthrough.html#%F0%9F%8C%A1%EF%B8%8F%20Part%205%3A%E6%A8%A1%E7%B5%84%20%E2%91%A2%20LiteDCTGhost%20IR%20Backbone%28%E8%B6%85%E8%A9%B3%E7%B4%B0%E7%89%88%29\">🗣 白話版</a>"}, {"id": "bbCLIP", "type": "text", "x": 400, "y": 280, "width": 280, "height": 160, "color": "5", "html": "<strong>CLIP ViT-B/32</strong>(凍結)<br><code>[\"person\",\"car\"]</code> → <code>T (2, 512)</code><br>文字 encoder 不參與訓練<br><br><a href=\"walkthrough.html#%F0%9F%93%A6%20Part%202%3ABridging%20RGB-IR%20%E6%95%B4%E9%AB%94%E6%9E%B6%E6%A7%8B%E9%B3%A5%E7%9E%B0\">🗣 白話版</a>"}, {"id": "g1", "type": "group", "label": "模組① Semantic-Bridge-Guided Dynamic Fusion(語意橋導引動態融合)", "x": 840, "y": -710, "width": 400, "height": 1430, "color": "2"}, {"id": "s1", "type": "text", "x": 880, "y": -660, "width": 320, "height": 200, "color": "2", "html": "<strong>Step 1|文字變共享 Query</strong><br><code>Q = W_q·T</code>,K_rgb / K_ir 各自投影<br>⚠️ <strong>Q 只算一次、兩模態共用</strong> — 這就是「橋」<br><br><a href=\"walkthrough.html#3.1%20Step%201%3A%E6%96%87%E5%AD%97%E8%AE%8A%E6%88%90%E3%80%8C%E5%95%8F%E9%A1%8C%E3%80%8D%2CRGB%20/%20IR%20%E8%AE%8A%E6%88%90%E3%80%8C%E7%AD%94%E6%A1%88%E5%80%99%E9%81%B8%E3%80%8D\">🗣 白話版</a>"}, {"id": "s2", "type": "text", "x": 880, "y": -380, "width": 320, "height": 200, "color": "2", "html": "<strong>Step 2|算語意響應</strong><br><code>A_rgb, A_ir = σ(QKᵀ/√d)</code>,shape <code>(2, 6400)</code><br>用 <strong>sigmoid 不用 softmax</strong>:每位置獨立判斷,多類可同時激活<br><br><a href=\"walkthrough.html#3.2%20Step%202%3A%E7%AE%97%E3%80%8C%E6%96%87%E5%AD%97%E5%B0%8D%E6%AF%8F%E5%80%8B%E4%BD%8D%E7%BD%AE%E7%9A%84%E9%9F%BF%E6%87%89%E3%80%8D\">🗣 白話版</a>"}, {"id": "s3", "type": "text", "x": 880, "y": -100, "width": 320, "height": 220, "color": "1", "html": "⭐ <strong>Step 3|Bi-Support 拆解(全文核心)</strong><br><code>M_cons = A_ir·A_rgb</code>:雙模態都認可的鐵證<br><code>M_dis = A_ir·(1−A_rgb)</code>:IR 獨家線索<br>身分式 <code>A_ir = M_cons + M_dis</code> → <strong>IR 響應被無損拆成兩路</strong>;以 IR 為基準問「RGB 同不同意」<br><br><a href=\"walkthrough.html#3.3%20%E2%98%85%20Step%203%3ABi-Support%20%E6%8B%86%E8%A7%A3%28%E5%85%A8%E6%96%87%E6%9C%80%E9%97%9C%E9%8D%B5%21%29\">🗣 白話版</a>"}, {"id": "s4", "type": "text", "x": 880, "y": 200, "width": 320, "height": 200, "color": "2", "html": "<strong>Step 4|動態重校準 IR</strong><br><code>X̃_ir = X_ir ⊙ (1+β·M_cons) ⊙ (1+α·M_dis)</code><br>β 主導 boosting、α 是差異訊號的可學 gate;<code>1+</code> 殘差保證沒響應處不被破壞<br><br><a href=\"walkthrough.html#3.4%20Step%204%3A%E5%8B%95%E6%85%8B%E9%87%8D%E6%A0%A1%E6%BA%96%20IR\">🗣 白話版</a>"}, {"id": "s5", "type": "text", "x": 880, "y": 480, "width": 320, "height": 200, "color": "2", "html": "<strong>Step 5|IR 反向引導 RGB</strong><br><code>W_att = φ(ψ(X̃_ir))</code> → <code>X̂_rgb = X_rgb ⊙ W_att</code><br><code>F_fuse = Conv([X̂_rgb, X̃_ir])</code>;IR 在退化場景更穩,當主導<br><br><a href=\"walkthrough.html#3.5%20Step%205%3A%E7%94%A8%E6%A0%A1%E6%BA%96%E5%BE%8C%E7%9A%84%20IR%20%E5%8F%8D%E9%81%8E%E4%BE%86%E5%BC%95%E5%B0%8E%20RGB\">🗣 白話版</a>"}, {"id": "g2", "type": "group", "label": "模組② Bidirectional Semantic Alignment(雙向語意對齊)", "x": 1360, "y": -410, "width": 400, "height": 850, "color": "3"}, {"id": "d1", "type": "text", "x": 1400, "y": -360, "width": 320, "height": 200, "color": "3", "html": "<strong>Direction 1|Text → Vision</strong><br><code>A_t→v (2, 6400)</code>:每個<strong>類別</strong>主動到 F_fuse 撈自己的證據區域<br>不選 v→t:背景 pixel 會投票污染前景<br><br><a href=\"walkthrough.html#4.1%20Direction%201%3AText%20%E2%86%92%20Vision%28%E9%A1%9E%E5%88%A5%E4%B8%BB%E5%8B%95%E6%92%88%E8%AD%89%E6%93%9A%29\">🗣 白話版</a>"}, {"id": "d2", "type": "text", "x": 1400, "y": -80, "width": 320, "height": 200, "color": "3", "html": "<strong>Direction 2|Vision → Text</strong><br><code>U = Concat(Pool(P3, P4, P5))</code> 更新文字 → <code>T̃</code><br>通用 \"person\" → 「這張圖的 person」(場景條件化)<br><br><a href=\"walkthrough.html#4.2%20Direction%202%3AVision%20%E2%86%92%20Text%28%E7%94%A8%E8%A6%96%E8%A6%BA%E8%AD%89%E6%93%9A%E6%9B%B4%E6%96%B0%E6%96%87%E5%AD%97%29\">🗣 白話版</a>"}, {"id": "d3", "type": "text", "x": 1400, "y": 200, "width": 320, "height": 200, "color": "3", "html": "<strong>為什麼要雙向?(閉環)</strong><br>只 t→v:query 仍是通用的,撈不準<br>只 v→t:文字準了但視覺沒精煉<br>雙向:視覺精煉 → 文字更新 → 分類最準<br><br><a href=\"walkthrough.html#4.3%20%E7%82%BA%E4%BB%80%E9%BA%BC%E8%A6%81%E3%80%8C%E9%9B%99%E5%90%91%E3%80%8D%3F%28%E9%96%89%E7%92%B0%E9%82%8F%E8%BC%AF%29\">🗣 白話版</a>"}, {"id": "head1", "type": "text", "x": 1880, "y": -120, "width": 320, "height": 220, "color": "6", "html": "<strong>Detection Head</strong>(YOLO-World 風格)<br>分類:<code>cosine(z_v, z_t̃)</code> + contrastive matching<br>bbox:標準 YOLO(CIoU + DFL)<br>類別由文字定義 → 換 prompt 免重訓 = <strong>open-vocabulary</strong>"}, {"id": "out1", "type": "text", "x": 2320, "y": -100, "width": 300, "height": 180, "color": "6", "html": "<strong>輸出</strong><br><code>bboxes + labels + scores</code><br>全模型 <strong>15.5M 參數</strong>,LLVIP+FLIR Avg mAP <strong>59.7</strong>(SOTA)"}, {"id": "i3", "type": "text", "x": 400, "y": 860, "width": 320, "height": 220, "color": "1", "html": "🔴 <strong>洞見|證人辦案比喻(Bi-Support)</strong><br>RGB = 一般目擊者(黑暗失能)<br>IR = 紅外攝影機(永遠在錄但會誤判)<br>雙證一致 = M_cons 鐵證;IR 獨家 = M_dis 線索,α 決定信多少<br><br><a href=\"walkthrough.html#%F0%9F%8E%AF%20%E8%AD%89%E4%BA%BA%E8%BE%A6%E6%A1%88%E6%AF%94%E5%96%BB\">🗣 白話版</a>"}, {"id": "i1", "type": "text", "x": 880, "y": 860, "width": 320, "height": 220, "color": "1", "html": "🔴 <strong>洞見|為什麼省 70.1% FLOPs</strong><br>直接 RGB↔IR cross-attn:<code>4N²C</code>(每像素 vs 每像素)<br>文字當橋:<code>4NMC</code>,比值 = <strong>M/N</strong>(LLVIP M=1)<br>→ 文字是<strong>低秩 bottleneck</strong>"}, {"id": "i2", "type": "text", "x": 1400, "y": 860, "width": 320, "height": 220, "color": "1", "html": "🔴 <strong>洞見|Ablation 重點數字</strong><br>共識+差異+動態重校準:~42 → <strong>50.4 mAP</strong><br>IR backbone:參數 <strong>−95%</strong> 反而 mAP <strong>+5.1pp</strong><br>→ 對的歸納偏誤 &gt; 大模型暴力壓<br><br><a href=\"walkthrough.html#5.8%20%E6%80%A7%E8%83%BD%E5%B0%8D%E6%AF%94%20%E2%80%94%20%E7%82%BA%E4%BB%80%E9%BA%BC%E9%80%99%E9%BA%BC%E7%9C%81\">🗣 白話版</a>"}], "edges": [{"id": "e1", "fromNode": "inRGB", "fromSide": "right", "toNode": "bbRGB", "toSide": "left", "label": "(3,640,640)"}, {"id": "e2", "fromNode": "inIR", "fromSide": "right", "toNode": "bbIR", "toSide": "left", "label": "(1,640,640)"}, {"id": "e3", "fromNode": "inTXT", "fromSide": "right", "toNode": "bbCLIP", "toSide": "left", "label": "編碼"}, {"id": "e4", "fromNode": "bbRGB", "fromSide": "right", "toNode": "s1", "toSide": "left", "label": "(256,80,80)"}, {"id": "e5", "fromNode": "bbIR", "fromSide": "right", "toNode": "s1", "toSide": "left", "label": "(256,80,80)"}, {"id": "e6", "fromNode": "bbCLIP", "fromSide": "right", "toNode": "s1", "toSide": "left", "label": "(2,512)"}, {"id": "e7", "fromNode": "s1", "fromSide": "bottom", "toNode": "s2", "toSide": "top", "label": "(2,256)"}, {"id": "e8", "fromNode": "s2", "fromSide": "bottom", "toNode": "s3", "toSide": "top", "label": "(2,6400)"}, {"id": "e9", "fromNode": "s3", "fromSide": "bottom", "toNode": "s4", "toSide": "top", "label": "(2,6400)"}, {"id": "e10", "fromNode": "s4", "fromSide": "bottom", "toNode": "s5", "toSide": "top", "label": "(256,80,80)"}, {"id": "e11", "fromNode": "s5", "fromSide": "right", "toNode": "d1", "toSide": "left", "label": "(256,80,80)"}, {"id": "e12", "fromNode": "d1", "fromSide": "bottom", "toNode": "d2", "toSide": "top", "label": "撈證據"}, {"id": "e13", "fromNode": "d2", "fromSide": "left", "toNode": "s1", "toSide": "right", "label": "更新Q"}, {"id": "e14", "fromNode": "d2", "fromSide": "right", "toNode": "head1", "toSide": "left", "label": "(2,512)"}, {"id": "e15", "fromNode": "d1", "fromSide": "right", "toNode": "head1", "toSide": "left", "label": "(N,256)"}, {"id": "e16", "fromNode": "head1", "fromSide": "right", "toNode": "out1", "toSide": "left", "label": "預測"}, {"id": "e17", "fromNode": "i3", "fromSide": "top", "toNode": "s3", "toSide": "left", "label": "比喻"}]};
 const world = document.getElementById('world');
 const svgNS = 'http://www.w3.org/2000/svg';
 const svg = document.getElementById('edges');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const PAD = 200;
 let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
 for (const n of data.nodes){minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x+n.width);maxY=Math.max(maxY,n.y+n.height);}
@@ -51,9 +104,12 @@ const W=maxX-minX+PAD*2, H=maxY-minY+PAD*2, OX=PAD-minX, OY=PAD-minY;
 world.style.width=W+'px'; world.style.height=H+'px';
 svg.setAttribute('width',W); svg.setAttribute('height',H);
 const defs=document.createElementNS(svgNS,'defs');
-defs.innerHTML='<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a949e"/></marker>';
+defs.innerHTML='<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a949e"/></marker>'
+  +'<marker id="arrhl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0969da"/></marker>';
 svg.appendChild(defs);
 const byId={};
+const edgesOf={}; // nodeId -> [edge,...]
+let entranceIdx=0;
 for (const n of data.nodes){
   byId[n.id]=n;
   const el=document.createElement('div');
@@ -66,7 +122,9 @@ for (const n of data.nodes){
   }
   el.style.left=(n.x+OX)+'px'; el.style.top=(n.y+OY)+'px';
   el.style.width=n.width+'px'; el.style.height=n.height+'px';
+  el.style.animationDelay=(entranceIdx++*0.035)+'s';
   world.appendChild(el);
+  n.el=el;
 }
 function pt(n,side){
   const x=n.x+OX,y=n.y+OY,w=n.width,h=n.height;
@@ -82,11 +140,15 @@ for (const e of data.edges){
   const[p2x,p2y,d2x,d2y]=pt(b,e.toSide||'left');
   const k=70;
   const c1x=p1x+d1x*k,c1y=p1y+d1y*k,c2x=p2x+d2x*k,c2y=p2y+d2y*k;
+  const g=document.createElementNS(svgNS,'g');
+  g.setAttribute('class','edge');
   const path=document.createElementNS(svgNS,'path');
   path.setAttribute('d',`M${p1x},${p1y} C${c1x},${c1y} ${c2x},${c2y} ${p2x},${p2y}`);
   path.setAttribute('fill','none');path.setAttribute('stroke','#8a949e');path.setAttribute('stroke-width','2');
   path.setAttribute('marker-end','url(#arr)');
-  svg.appendChild(path);
+  path.setAttribute('class','edgepath');
+  g.appendChild(path);
+  svg.appendChild(g);
   if(e.label){
     const mx=0.125*p1x+0.375*c1x+0.375*c2x+0.125*p2x;
     const my=0.125*p1y+0.375*c1y+0.375*c2y+0.125*p2y;
@@ -94,11 +156,14 @@ for (const e of data.edges){
     tl.setAttribute('x',mx);tl.setAttribute('y',my+4);tl.setAttribute('text-anchor','middle');tl.setAttribute('class','elabel');
     tl.textContent=e.label;
     const bg=document.createElementNS(svgNS,'rect');
-    svg.appendChild(bg);svg.appendChild(tl);
+    g.appendChild(bg);g.appendChild(tl);
     const bb=tl.getBBox();
     bg.setAttribute('x',bb.x-4);bg.setAttribute('y',bb.y-2);bg.setAttribute('width',bb.width+8);bg.setAttribute('height',bb.height+4);
     bg.setAttribute('class','elabelbg');bg.setAttribute('rx','4');
   }
+  e.g=g; e.path=path;
+  (edgesOf[e.fromNode]=edgesOf[e.fromNode]||[]).push(e);
+  (edgesOf[e.toNode]=edgesOf[e.toNode]||[]).push(e);
 }
 let scale=1,tx=0,ty=0;
 const vp=document.getElementById('viewport');
@@ -108,7 +173,11 @@ function fit(){
   scale=Math.min(vw/W,vh/H)*0.96;
   tx=(vw-W*scale)/2; ty=(vh-H*scale)/2; apply();
 }
-fit(); window.addEventListener('resize',fit);
+fit();
+window.addEventListener('resize',()=>{
+  if(touring && tourIdx>=0){ if(!userPaused) focusStep(tourIdx,true); }
+  else fit();
+});
 document.getElementById('zfit').onclick=fit;
 document.getElementById('zin').onclick=()=>{zoomAt(vp.clientWidth/2,vp.clientHeight/2,1.25)};
 document.getElementById('zout').onclick=()=>{zoomAt(vp.clientWidth/2,vp.clientHeight/2,0.8)};
@@ -118,6 +187,7 @@ function zoomAt(cx,cy,f){
 }
 vp.addEventListener('wheel',ev=>{
   ev.preventDefault();
+  if(touring){cancelTween();userPaused=true;}
   if(ev.ctrlKey||ev.metaKey||Math.abs(ev.deltaY)>=Math.abs(ev.deltaX)){
     zoomAt(ev.clientX,ev.clientY,ev.deltaY<0?1.1:0.9);
   } else { tx-=ev.deltaX; apply(); }
@@ -125,6 +195,7 @@ vp.addEventListener('wheel',ev=>{
 let drag=null;
 vp.addEventListener('pointerdown',ev=>{
   if(ev.target.closest('a'))return;
+  if(touring){cancelTween();userPaused=true;}  // 導覽中手動拖曳:暫停自動置中,不退出導覽
   drag={x:ev.clientX,y:ev.clientY,tx,ty};
   vp.classList.add('dragging'); vp.setPointerCapture(ev.pointerId);
 });
@@ -134,7 +205,7 @@ vp.addEventListener('pointermove',ev=>{
 });
 vp.addEventListener('pointerup',()=>{drag=null;vp.classList.remove('dragging');});
 let pinch=null;
-vp.addEventListener('touchstart',ev=>{ if(ev.touches.length===2){ pinch=dist(ev); } },{passive:true});
+vp.addEventListener('touchstart',ev=>{ if(ev.touches.length===2){ pinch=dist(ev); if(touring){cancelTween();userPaused=true;} } },{passive:true});
 vp.addEventListener('touchmove',ev=>{
   if(pinch&&ev.touches.length===2){
     ev.preventDefault();
@@ -144,6 +215,103 @@ vp.addEventListener('touchmove',ev=>{
 },{passive:false});
 vp.addEventListener('touchend',()=>{pinch=null;});
 function dist(ev){const dx=ev.touches[0].clientX-ev.touches[1].clientX,dy=ev.touches[0].clientY-ev.touches[1].clientY;return Math.hypot(dx,dy);}
+
+/* ───────── hover 互動:卡片放大 + 相連邊高亮 ───────── */
+function setEdgeMarker(e){
+  e.path.setAttribute('marker-end',(e.g.classList.contains('hl')||e.g.classList.contains('hov'))?'url(#arrhl)':'url(#arr)');
+}
+for (const n of data.nodes){
+  if(n.type==='group')continue;
+  n.el.addEventListener('mouseenter',()=>{
+    for(const e of edgesOf[n.id]||[]){ e.g.classList.add('hov'); setEdgeMarker(e); }
+  });
+  n.el.addEventListener('mouseleave',()=>{
+    for(const e of edgesOf[n.id]||[]){ e.g.classList.remove('hov'); setEdgeMarker(e); }
+  });
+}
+
+/* ───────── 導覽模式 ───────── */
+const tourOrder=['inRGB','inIR','inTXT','bbRGB','bbIR','bbCLIP','s1','s2','s3','s4','s5','d1','d2','d3','head1','out1','i3','i1','i2'];
+let touring=false, tourIdx=-1, tweenId=null, userPaused=false;
+const tourbar=document.getElementById('tourbar');
+const tcount=document.getElementById('tcount');
+const ttitle=document.getElementById('ttitle');
+const tprev=document.getElementById('tprev');
+const tnext=document.getElementById('tnext');
+
+function firstLine(n){
+  const seg=(n.html||'').split(/<br\s*\/?>/i)[0];
+  const d=document.createElement('div'); d.innerHTML=seg;
+  return d.textContent.trim();
+}
+function cancelTween(){ if(tweenId){cancelAnimationFrame(tweenId);tweenId=null;} }
+function tweenTo(ts,ttx,tty,dur){
+  cancelTween();
+  if(reduceMotion){scale=ts;tx=ttx;ty=tty;apply();return;}
+  const s0=scale,x0=tx,y0=ty,t0=performance.now();
+  function frame(t){
+    let p=Math.min(1,(t-t0)/dur);
+    p=p<.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2; // easeInOutCubic
+    scale=s0+(ts-s0)*p; tx=x0+(ttx-x0)*p; ty=y0+(tty-y0)*p; apply();
+    tweenId = p<1 ? requestAnimationFrame(frame) : null;
+  }
+  tweenId=requestAnimationFrame(frame);
+}
+function clearTourHL(){
+  for(const n of data.nodes){ n.el.classList.remove('focus','dim'); }
+  for(const e of data.edges){ if(!e.g)continue; e.g.classList.remove('hl','dim'); setEdgeMarker(e); }
+}
+function focusStep(i,instant){
+  const id=tourOrder[i], n=byId[id];
+  if(!n)return;
+  tourIdx=i; userPaused=false;
+  // 高亮/降透明
+  clearTourHL();
+  for(const m of data.nodes){ if(m!==n) m.el.classList.add('dim'); }
+  n.el.classList.add('focus');
+  const conn=new Set(edgesOf[id]||[]);
+  for(const e of data.edges){
+    if(!e.g)continue;
+    if(conn.has(e)){ e.g.classList.add('hl'); } else { e.g.classList.add('dim'); }
+    setEdgeMarker(e);
+  }
+  // 導覽列
+  tcount.textContent=(i+1)+'/'+tourOrder.length;
+  ttitle.textContent=firstLine(n);
+  tprev.disabled=(i===0); tnext.disabled=(i===tourOrder.length-1);
+  // 平滑 pan+zoom 置中放大
+  const vw=vp.clientWidth, vh=vp.clientHeight;
+  const navH=52, barH=86;
+  const availH=vh-navH-barH;
+  const ts=Math.min(1.5,Math.max(0.55,Math.min(vw*0.6/n.width, availH*0.62/n.height)));
+  const cx=vw/2, cy=navH+availH/2;
+  const ttx=cx-(n.x+OX+n.width/2)*ts;
+  const tty=cy-(n.y+OY+n.height/2)*ts;
+  tweenTo(ts,ttx,tty,instant?0:680);
+}
+function startTour(){
+  touring=true;
+  document.body.classList.add('touring');
+  tourbar.hidden=false;
+  focusStep(0);
+}
+function endTour(){
+  touring=false; tourIdx=-1; userPaused=false;
+  cancelTween();
+  document.body.classList.remove('touring');
+  tourbar.hidden=true;
+  clearTourHL();
+}
+document.getElementById('tourbtn').onclick=startTour;
+document.getElementById('tend').onclick=endTour;
+tprev.onclick=()=>{ if(tourIdx>0)focusStep(tourIdx-1); };
+tnext.onclick=()=>{ if(tourIdx<tourOrder.length-1)focusStep(tourIdx+1); };
+window.addEventListener('keydown',ev=>{
+  if(!touring)return;
+  if(ev.key==='ArrowRight'){ ev.preventDefault(); if(tourIdx<tourOrder.length-1)focusStep(tourIdx+1); }
+  else if(ev.key==='ArrowLeft'){ ev.preventDefault(); if(tourIdx>0)focusStep(tourIdx-1); }
+  else if(ev.key==='Escape'){ ev.preventDefault(); endTour(); }
+});
 </script>
 </body>
 </html>

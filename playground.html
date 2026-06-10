@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>互動實驗室 · Bridging RGB-IR 走讀</title>
+<style>
+:root{
+  --ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa;
+  --red:#e93147;--orange:#ec7500;--yellow:#e0ac00;--green:#08b94e;--teal:#00bfbc;--purple:#7852ee;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.7}
+
+/* ───── 共用 nav(毛玻璃 sticky) ───── */
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.navwrap{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;gap:6px;overflow-x:auto;white-space:nowrap}
+nav a{font-size:.92rem;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:8px;transition:background .15s,color .15s}
+nav a:hover{background:var(--bg);color:var(--ink)}
+nav a.cur{background:var(--accent);color:#fff;font-weight:600}
+
+.wrap{max-width:980px;margin:0 auto;padding:36px 18px 60px}
+header.page h1{font-size:1.8rem;margin:0 0 6px}
+header.page p.sub{color:var(--muted);margin:0 0 30px}
+
+/* ───── 卡片與進場動畫 ───── */
+section.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 26px 30px;margin-bottom:30px;box-shadow:0 2px 10px rgba(0,0,0,.05);transition:box-shadow .2s,transform .2s}
+section.card:hover{box-shadow:0 6px 22px rgba(0,0,0,.09);transform:translateY(-2px)}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none !important;animation:none !important}
+  .reveal{opacity:1;transform:none}
+}
+
+.exp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.badge{font-size:.8rem;font-weight:700;color:#fff;border-radius:999px;padding:3px 12px;letter-spacing:.5px}
+.b-red{background:var(--red)}.b-orange{background:var(--orange)}.b-purple{background:var(--purple)}.b-green{background:var(--green)}
+.exp-head h2{font-size:1.3rem;margin:0}
+.exp-sub{color:var(--muted);font-size:.92rem;margin:4px 0 18px}
+
+/* ───── 滑桿列 ───── */
+.slider-row{display:flex;align-items:center;gap:12px;margin:10px 0}
+.slider-row label{flex:0 0 5.2em;font-size:.95rem;font-weight:600}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+.slider-row output{flex:0 0 3.4em;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}
+
+/* ───── 實驗 1 ───── */
+.exp1-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:26px}
+.exp1-grid>*,.branches>*,.exp3-grid>*{min-width:0}
+@media (max-width:860px){.exp1-grid{grid-template-columns:1fr}}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.presets button{font-family:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:7px 11px;cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
+.presets button:hover{transform:translateY(-2px);box-shadow:0 3px 9px rgba(0,0,0,.1);border-color:var(--accent)}
+details.adv{margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:8px 14px;background:var(--bg)}
+details.adv summary{cursor:pointer;font-size:.9rem;color:var(--muted);font-weight:600}
+blockquote.witness{margin:18px 0 0;padding:12px 14px;border-left:4px solid var(--red);background:#fdf1f2;border-radius:0 10px 10px 0;font-size:.86rem;color:#5a3338}
+.formulas{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:.92rem;line-height:2.05;overflow-x:auto}
+.formulas .fl{white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem}
+.formulas strong{color:var(--accent)}
+.mbars{margin:16px 0 6px}
+.mbar-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.mbar-row .mlabel{flex:0 0 4.6em;font-size:.85rem;font-weight:700;font-family:ui-monospace,Menlo,monospace}
+.mbar-track{flex:1;height:22px;background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mbar-fill{height:100%;border-radius:7px 0 0 7px;transition:width .3s ease}
+.mbar-row .mval{flex:0 0 3.6em;text-align:right;font-variant-numeric:tabular-nums;font-size:.88rem;font-weight:700}
+#bar-mcons{background:var(--green)}
+#bar-mdis{background:var(--yellow)}
+.gainbox{display:flex;align-items:baseline;gap:14px;margin:14px 0 4px;flex-wrap:wrap}
+.gainbox .glabel{font-size:.95rem;font-weight:600;color:var(--muted)}
+#gain-num{font-size:2.6rem;font-weight:800;font-variant-numeric:tabular-nums;transition:color .25s;line-height:1.1}
+#gain-pct{font-size:1rem;font-weight:700;color:var(--muted)}
+.verdict{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:.95rem;font-weight:600;border:1px solid var(--line);transition:background .25s}
+.vd-green{background:#eefaf2;border-color:var(--green);color:#077f38}
+.vd-yellow{background:#fdf9e9;border-color:var(--yellow);color:#8a6a00}
+.vd-blue{background:#eef5fd;border-color:var(--accent);color:#0a5bb0}
+.vd-gray{background:var(--bg);color:var(--muted)}
+
+/* ───── 實驗 2 ───── */
+.exp2-controls{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:12px}
+.exp2-controls .cutwrap{display:flex;align-items:center;gap:10px;flex:1;min-width:240px}
+.exp2-controls label.chk{font-size:.9rem;display:flex;align-items:center;gap:6px;cursor:pointer}
+.exp2-controls input[type=range]{flex:1;accent-color:var(--orange);min-width:0}
+.exp2-controls output{font-weight:700;color:var(--orange);font-variant-numeric:tabular-nums}
+button.act{font-family:inherit;font-size:.9rem;font-weight:600;color:#fff;background:var(--purple);border:none;border-radius:10px;padding:8px 16px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+button.act:hover{transform:translateY(-2px);box-shadow:0 3px 10px rgba(120,82,238,.4)}
+canvas.plot{width:100%;display:block;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.caption{font-size:.83rem;color:var(--muted);margin:6px 0 14px}
+.branches{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:700px){.branches{grid-template-columns:1fr}}
+.branch h3{font-size:.95rem;margin:0 0 6px}
+.branch.low h3{color:#077f38}.branch.high h3{color:#c46100}
+#recon-msg{display:none;margin-top:12px;padding:10px 14px;border-radius:10px;background:#f4f0fd;border:1px solid var(--purple);color:#5a3bc4;font-size:.9rem;font-weight:600}
+.lossless{margin-top:14px;font-size:.88rem;color:var(--muted);background:var(--bg);border-radius:10px;padding:10px 14px;border:1px solid var(--line)}
+
+/* ───── 實驗 3 ───── */
+.exp3-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px}
+@media (max-width:700px){.exp3-grid{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--bg)}
+.panel h3{margin:0 0 4px;font-size:1rem}
+.panel p.pd{margin:0 0 12px;font-size:.8rem;color:var(--muted)}
+.pbar-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+.pbar-row .plabel{flex:0 0 3.8em;font-size:.85rem;font-weight:600}
+.pbar-track{flex:1;height:26px;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pbar-fill{height:100%;transition:width .25s ease;border-radius:7px 0 0 7px}
+.pf-person{background:var(--accent)}
+.pf-car{background:var(--orange)}
+.pbar-row .pval{flex:0 0 3.8em;text-align:right;font-size:.88rem;font-weight:700;font-variant-numeric:tabular-nums}
+.psum{margin-top:10px;font-size:.85rem;font-weight:700;color:var(--muted)}
+#exp3-insight{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:.93rem}
+#exp3-insight.star{background:#f4f0fd;border-color:var(--purple);color:#4a2fb0;font-weight:600}
+
+/* ───── 實驗 4(翻卡測驗) ───── */
+.quiz-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.ringwrap{position:relative;width:72px;height:72px;flex:0 0 72px}
+.ringwrap svg{transform:rotate(-90deg)}
+#ring-fg{transition:stroke-dashoffset .4s ease}
+.ringtext{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;line-height:1}
+.ringtext small{font-size:.55rem;color:var(--muted);font-weight:600;margin-top:2px}
+.quiz-stats{flex:1;font-size:.9rem;color:var(--muted)}
+.quiz-stats b{color:var(--ink)}
+button.reset{font-family:inherit;font-size:.85rem;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:10px;padding:7px 14px;cursor:pointer;transition:border-color .15s,color .15s}
+button.reset:hover{border-color:var(--red);color:var(--red)}
+.flip-stage{perspective:1400px;max-width:680px;margin:0 auto}
+.flipcard{cursor:pointer}
+.flipcard .inner{position:relative;min-height:300px;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.7,.3,1)}
+.flipcard.flipped .inner{transform:rotateY(180deg)}
+.inner.noanim{transition:none !important}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:16px;padding:24px;overflow:auto;display:flex;flex-direction:column}
+.face.front{background:#fff;border:2px solid var(--green);box-shadow:0 3px 12px rgba(8,185,78,.12)}
+.face.back{background:#eefaf2;border:2px solid var(--green);transform:rotateY(180deg)}
+.face .ptag{align-self:flex-start;font-size:.72rem;font-weight:700;color:#077f38;background:#dcf5e6;border-radius:999px;padding:2px 10px;margin-bottom:12px}
+.face.front .qtext{font-size:1.08rem;font-weight:700;line-height:1.8;flex:1}
+.face.back .atext{font-size:.95rem;line-height:1.85;flex:1}
+.face .hint{font-size:.78rem;color:var(--muted);margin-top:14px}
+.ansbtns{display:flex;gap:10px;margin-top:16px}
+.ansbtns button{flex:1;font-family:inherit;font-size:.95rem;font-weight:700;border:none;border-radius:10px;padding:10px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.ansbtns button:hover{transform:translateY(-2px);box-shadow:0 3px 9px rgba(0,0,0,.15)}
+#btn-correct{background:var(--green);color:#fff}
+#btn-wrong{background:#fdf1f2;color:var(--red);border:1px solid var(--red)}
+.queue-info{text-align:center;font-size:.83rem;color:var(--muted);margin-top:14px}
+#quiz-done{display:none;text-align:center;padding:40px 20px;border:2px dashed var(--green);border-radius:16px;background:#eefaf2}
+#quiz-done .big{font-size:1.4rem;font-weight:800;margin-bottom:8px}
+
+footer{margin-top:36px;font-size:.8rem;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="navwrap">
+    <a href="index.html">⌂ 首頁</a>
+    <a href="slides.html">🎞 簡報</a>
+    <a href="map.html">🗺 地圖</a>
+    <a href="playground.html" class="cur" aria-current="page">🧪 實驗室</a>
+    <a href="walkthrough.html">📖 全文</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="page reveal">
+  <h1>🧪 互動實驗室</h1>
+  <p class="sub">把 Bridging RGB-IR × LLMDet 走讀裡的關鍵公式變成可以動手玩的小實驗。所有數字與公式皆取自 walkthrough.md。</p>
+</header>
+
+<!-- ═════════ 實驗 1|Bi-Support 實驗室 ═════════ -->
+<section class="card reveal" id="exp1">
+  <div class="exp-head"><span class="badge b-red">實驗 1</span><h2>Bi-Support 實驗室</h2></div>
+  <p class="exp-sub">全文最關鍵的 Step 3 + Step 4:拖動 A<sub>rgb</sub>、A<sub>ir</sub>,看共識 M<sub>cons</sub>、差異 M<sub>dis</sub> 與 IR 特徵增益怎麼變。</p>
+  <div class="exp1-grid">
+    <div>
+      <div class="slider-row">
+        <label for="sl-argb">A<sub>rgb</sub></label>
+        <input type="range" id="sl-argb" min="0" max="1" step="0.01" value="0.8">
+        <output id="v-argb">0.80</output>
+      </div>
+      <div class="slider-row">
+        <label for="sl-air">A<sub>ir</sub></label>
+        <input type="range" id="sl-air" min="0" max="1" step="0.01" value="0.9">
+        <output id="v-air">0.90</output>
+      </div>
+      <div class="presets" id="presets">
+        <button data-r="0.8"  data-i="0.9">☀️ 亮處有人 (0.8, 0.9)</button>
+        <button data-r="0.1"  data-i="0.85">🌙 黑暗只有 IR (0.1, 0.85)</button>
+        <button data-r="0.05" data-i="0.05">⬜ 純背景 (0.05, 0.05)</button>
+        <button data-r="0.7"  data-i="0.1">⚠️ RGB 誤報 (0.7, 0.1)</button>
+      </div>
+      <details class="adv">
+        <summary>進階:α、β(可學參數,預設 0.5)</summary>
+        <div class="slider-row">
+          <label for="sl-beta">β(主導)</label>
+          <input type="range" id="sl-beta" min="0" max="2" step="0.01" value="0.5">
+          <output id="v-beta">0.50</output>
+        </div>
+        <div class="slider-row">
+          <label for="sl-alpha">α(gate)</label>
+          <input type="range" id="sl-alpha" min="0" max="2" step="0.01" value="0.5">
+          <output id="v-alpha">0.50</output>
+        </div>
+      </details>
+      <blockquote class="witness">
+        🕵️ <strong>證人辦案比喻</strong>:RGB 證人 = 一般目擊者(黑暗看不見就無能);IR 證人 = 紅外攝影機(永遠在錄,但會誤判)。雙證一致 → M<sub>cons</sub> 強 → 鐵證;RGB 失效、IR 獨家 → M<sub>dis</sub> 強 → 可能是真線索,但要小心(α 決定信多少)。
+      </blockquote>
+    </div>
+    <div>
+      <div class="formulas">
+        <div class="fl" id="f-mcons"></div>
+        <div class="fl" id="f-mdis"></div>
+        <div class="fl" id="f-gain"></div>
+      </div>
+      <div class="mbars">
+        <div class="mbar-row">
+          <span class="mlabel">M_cons</span>
+          <div class="mbar-track"><div class="mbar-fill" id="bar-mcons"></div></div>
+          <span class="mval" id="mv-cons"></span>
+        </div>
+        <div class="mbar-row">
+          <span class="mlabel">M_dis</span>
+          <div class="mbar-track"><div class="mbar-fill" id="bar-mdis"></div></div>
+          <span class="mval" id="mv-dis"></span>
+        </div>
+      </div>
+      <div class="gainbox">
+        <span class="glabel">IR 特徵增益</span>
+        <span id="gain-num">×1.482</span>
+        <span id="gain-pct"></span>
+      </div>
+      <div class="verdict vd-green" id="verdict"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 實驗 2|頻率拆解 ═════════ -->
+<section class="card reveal" id="exp2">
+  <div class="exp-head"><span class="badge b-orange">實驗 2</span><h2>頻率拆解(LiteDCTGhost 的直覺)</h2></div>
+  <p class="exp-sub">把一條 1D 訊號(模擬 IR 的熱分布大波 + 邊緣小波)做真實 DCT,用可調的 mask 截止頻率拆成低頻、高頻兩個分支 —— 跟模組 ③ 在頻域做的事一模一樣。</p>
+  <div class="exp2-controls">
+    <label class="chk"><input type="checkbox" id="chk-noise"> 加雜訊</label>
+    <div class="cutwrap">
+      <span style="font-size:.9rem;font-weight:600">mask 截止頻率 k<sub>c</sub></span>
+      <input type="range" id="sl-cut" min="2" max="60" step="1" value="16">
+      <output id="v-cut">16</output>
+    </div>
+    <button class="act" id="btn-recon">🔁 重組(低頻 + 高頻)</button>
+  </div>
+  <canvas class="plot" id="cv-main" data-h="170"></canvas>
+  <p class="caption">黑線 = 原訊號 X̂<sub>ir</sub>(低頻大波 = 熱分布 + 高頻小波 = 邊緣);按「重組」會疊上紫色虛線 = 低頻分支 + 高頻分支。</p>
+  <div id="recon-msg"></div>
+  <div class="branches">
+    <div class="branch low">
+      <h3>低頻分支 X<sub>ir</sub><sup>L</sup> = D⁻¹( M ⊙ X̂ )</h3>
+      <canvas class="plot" id="cv-low" data-h="130"></canvas>
+      <p class="caption">低頻 = <strong>有沒有人</strong>(整塊熱分布)→ 交給 φ<sub>L</sub> 學</p>
+    </div>
+    <div class="branch high">
+      <h3>高頻分支 X<sub>ir</sub><sup>H</sup> = D⁻¹( (1−M) ⊙ X̂ )</h3>
+      <canvas class="plot" id="cv-high" data-h="130"></canvas>
+      <p class="caption">高頻 = <strong>形狀在哪</strong>(邊緣輪廓)→ 交給 φ<sub>H</sub> 學</p>
+    </div>
+  </div>
+  <div class="lossless">🔑 關鍵:<strong>M + (1−M) = 1</strong> → 兩個分支完整覆蓋所有頻率,<strong>沒丟資訊</strong>。分開後各自用小卷積編碼,容量不浪費、高頻不被低頻淹沒 —— 1 + 1 &gt; 2。</div>
+</section>
+
+<!-- ═════════ 實驗 3|sigmoid vs softmax ═════════ -->
+<section class="card reveal" id="exp3">
+  <div class="exp-head"><span class="badge b-purple">實驗 3</span><h2>sigmoid vs softmax</h2></div>
+  <p class="exp-sub">Step 2 算語意響應 A = σ(QKᵀ/√d) 為什麼用 sigmoid?拖動兩個類別的 logit 分數,看兩種歸一化的差別。</p>
+  <div class="slider-row">
+    <label for="sl-p">person</label>
+    <input type="range" id="sl-p" min="-5" max="5" step="0.1" value="2">
+    <output id="v-p">+2.0</output>
+  </div>
+  <div class="slider-row">
+    <label for="sl-c">car</label>
+    <input type="range" id="sl-c" min="-5" max="5" step="0.1" value="2">
+    <output id="v-c">+2.0</output>
+  </div>
+  <div class="exp3-grid">
+    <div class="panel">
+      <h3>softmax(強迫互斥)</h3>
+      <p class="pd">總和被鎖定 = 1:一個變高,另一個必被壓低</p>
+      <div class="pbar-row"><span class="plabel">person</span><div class="pbar-track"><div class="pbar-fill pf-person" id="sm-p"></div></div><span class="pval" id="smv-p"></span></div>
+      <div class="pbar-row"><span class="plabel">car</span><div class="pbar-track"><div class="pbar-fill pf-car" id="sm-c"></div></div><span class="pval" id="smv-c"></span></div>
+      <div class="psum" id="sm-sum"></div>
+    </div>
+    <div class="panel">
+      <h3>sigmoid(獨立判斷)</h3>
+      <p class="pd">每個類別各自過 σ(x):互不影響、可同時很高</p>
+      <div class="pbar-row"><span class="plabel">person</span><div class="pbar-track"><div class="pbar-fill pf-person" id="sg-p"></div></div><span class="pval" id="sgv-p"></span></div>
+      <div class="pbar-row"><span class="plabel">car</span><div class="pbar-track"><div class="pbar-fill pf-car" id="sg-c"></div></div><span class="pval" id="sgv-c"></span></div>
+      <div class="psum" id="sg-sum"></div>
+    </div>
+  </div>
+  <div id="exp3-insight"></div>
+</section>
+
+<!-- ═════════ 實驗 4|自我檢驗測驗 ═════════ -->
+<section class="card reveal" id="exp4"><span id="quiz" style="position:relative;top:-70px"></span>
+  <div class="exp-head"><span class="badge b-green">實驗 4</span><h2>自我檢驗測驗</h2></div>
+  <p class="exp-sub">20 題翻卡,取自走讀各 Part 的「✅ 自我檢驗」與 Part 7 六題。點卡片翻面看答案,自己誠實打分;答錯的題會排到佇列尾端再抽,進度存在瀏覽器(localStorage)。</p>
+  <div class="quiz-top">
+    <div class="ringwrap">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r="30" fill="none" stroke="#e6e9ec" stroke-width="8"></circle>
+        <circle id="ring-fg" cx="36" cy="36" r="30" fill="none" stroke="#08b94e" stroke-width="8" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5"></circle>
+      </svg>
+      <div class="ringtext"><span id="ring-num">0</span><small>首次答對</small></div>
+    </div>
+    <div class="quiz-stats" id="quiz-stats"></div>
+    <button class="reset" id="btn-reset">↺ 重置進度</button>
+  </div>
+  <div class="flip-stage">
+    <div class="flipcard" id="flipcard">
+      <div class="inner" id="flip-inner">
+        <div class="face front">
+          <span class="ptag" id="q-part-f"></span>
+          <div class="qtext" id="q-text"></div>
+          <div class="hint">👆 點擊卡片翻面看答案</div>
+        </div>
+        <div class="face back">
+          <span class="ptag" id="q-part-b"></span>
+          <div class="atext" id="a-text"></div>
+          <div class="ansbtns">
+            <button id="btn-correct">✅ 答對了</button>
+            <button id="btn-wrong">❌ 再來一次</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="quiz-done">
+      <div class="big">🎉 全部完成!</div>
+      <div id="done-stats" style="margin-bottom:16px"></div>
+      <button class="act" id="btn-again">再測一輪</button>
+    </div>
+    <div class="queue-info" id="queue-info"></div>
+  </div>
+</section>
+
+<footer>內容事實以 walkthrough.md 為準 · 個人學習筆記 · 2026</footer>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ════════ 進場動畫 ════════ */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ════════ 實驗 1|Bi-Support ════════ */
+const sR = $('sl-argb'), sI = $('sl-air'), sB = $('sl-beta'), sA = $('sl-alpha');
+
+function exp1Update() {
+  const Ar = +sR.value, Ai = +sI.value, be = +sB.value, al = +sA.value;
+  $('v-argb').textContent = Ar.toFixed(2);
+  $('v-air').textContent  = Ai.toFixed(2);
+  $('v-beta').textContent = be.toFixed(2);
+  $('v-alpha').textContent= al.toFixed(2);
+
+  const mc = Ai * Ar;
+  const md = Ai * (1 - Ar);
+  const g1 = 1 + be * mc, g2 = 1 + al * md, g = g1 * g2;
+
+  $('f-mcons').innerHTML = `M<sub>cons</sub> = A<sub>ir</sub> · A<sub>rgb</sub> = ${Ai.toFixed(2)} × ${Ar.toFixed(2)} = <strong>${mc.toFixed(3)}</strong>`;
+  $('f-mdis').innerHTML  = `M<sub>dis</sub>&nbsp; = A<sub>ir</sub> · (1−A<sub>rgb</sub>) = ${Ai.toFixed(2)} × ${(1-Ar).toFixed(2)} = <strong>${md.toFixed(3)}</strong>`;
+  $('f-gain').innerHTML  = `增益 = (1+β·M<sub>cons</sub>)(1+α·M<sub>dis</sub>) = (1+${be.toFixed(2)}×${mc.toFixed(3)})(1+${al.toFixed(2)}×${md.toFixed(3)}) = ${g1.toFixed(3)} × ${g2.toFixed(3)} = <strong>${g.toFixed(3)}</strong>`;
+
+  $('bar-mcons').style.width = (mc * 100) + '%';
+  $('bar-mdis').style.width  = (md * 100) + '%';
+  $('mv-cons').textContent = mc.toFixed(3);
+  $('mv-dis').textContent  = md.toFixed(3);
+
+  const pct = (g - 1) * 100;
+  $('gain-num').textContent = '×' + g.toFixed(3);
+  $('gain-pct').textContent = pct >= 0.5 ? `(IR 特徵強化 ${pct.toFixed(1)}%)` : '(特徵幾乎不動)';
+  $('gain-num').style.color = g < 1.05 ? '#57606a' : g < 1.2 ? '#e0ac00' : g < 1.4 ? '#ec7500' : '#e93147';
+
+  const vd = $('verdict');
+  let msg, cls;
+  if (Ar >= 0.4 && Ai >= 0.4) {
+    msg = `🟢 鐵證區:雙模態都看到,IR 特徵強化 ${pct.toFixed(0)}%`; cls = 'vd-green';
+  } else if (Ai >= 0.4) {
+    msg = `🟡 IR 獨家線索:RGB 沒看到但 IR 很確定 —— M_dis 主導,α 決定信多少(此處仍強化 ${pct.toFixed(0)}%)`; cls = 'vd-yellow';
+  } else if (Ar >= 0.4) {
+    msg = '🔵 RGB 單方面:以 IR 為基準的拆解不啟動(A_ir 低 → M_cons、M_dis 都小)'; cls = 'vd-blue';
+  } else {
+    msg = '⚪ 背景:增益 ≈ 1,特徵不動(這就是 1+x 設計的意義)'; cls = 'vd-gray';
+  }
+  vd.textContent = msg;
+  vd.className = 'verdict ' + cls;
+}
+[sR, sI, sB, sA].forEach(el => el.addEventListener('input', exp1Update));
+
+function presetTo(r, i) {
+  if (prefersReduced) { sR.value = r; sI.value = i; exp1Update(); return; }
+  const r0 = +sR.value, i0 = +sI.value, t0 = performance.now(), D = 480;
+  function step(t) {
+    let p = Math.min(1, (t - t0) / D);
+    p = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
+    sR.value = r0 + (r - r0) * p;
+    sI.value = i0 + (i - i0) * p;
+    exp1Update();
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+$('presets').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) presetTo(+b.dataset.r, +b.dataset.i);
+});
+exp1Update();
+
+/* ════════ 實驗 2|頻率拆解(真實 DCT-II / IDCT) ════════ */
+const N = 256;
+const SQ1 = Math.sqrt(1 / N), SQ2 = Math.sqrt(2 / N);
+function dct2(x) {
+  const X = new Float64Array(N);
+  for (let k = 0; k < N; k++) {
+    let s = 0;
+    for (let n = 0; n < N; n++) s += x[n] * Math.cos(Math.PI * k * (2 * n + 1) / (2 * N));
+    X[k] = s * (k === 0 ? SQ1 : SQ2);
+  }
+  return X;
+}
+function idct2(X) {
+  const x = new Float64Array(N);
+  for (let n = 0; n < N; n++) {
+    let s = 0;
+    for (let k = 0; k < N; k++) s += (k === 0 ? SQ1 : SQ2) * X[k] * Math.cos(Math.PI * k * (2 * n + 1) / (2 * N));
+    x[n] = s;
+  }
+  return x;
+}
+const noiseArr = Array.from({ length: N }, () => (Math.random() * 2 - 1) * 0.12);
+let noiseOn = false;
+function buildSignal() {
+  const x = new Float64Array(N);
+  for (let n = 0; n < N; n++) {
+    const t = n / N;
+    const blob = 0.9 * Math.exp(-Math.pow((t - 0.5) / 0.16, 2));       // 低頻大波:熱分布
+    const rip  = 0.22 * Math.sin(2 * Math.PI * 16 * t) + 0.12 * Math.sin(2 * Math.PI * 26 * t); // 高頻小波:邊緣
+    x[n] = blob + rip + (noiseOn ? noiseArr[n] : 0);
+  }
+  return x;
+}
+let sig = buildSignal(), spec = dct2(sig);
+let lowArr = null, highArr = null, showRecon = false, reconArr = null;
+
+function fitCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || 600, h = +cv.dataset.h;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  cv.style.height = h + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+function plot(cv, series, yr) {
+  const ctx = fitCanvas(cv);
+  const w = cv.clientWidth, h = +cv.dataset.h;
+  ctx.clearRect(0, 0, w, h);
+  // 零線
+  const y0 = h - (0 - yr[0]) / (yr[1] - yr[0]) * h;
+  ctx.strokeStyle = '#d0d7de'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(w, y0); ctx.stroke();
+  ctx.setLineDash([]);
+  for (const s of series) {
+    ctx.strokeStyle = s.c; ctx.lineWidth = s.w || 2;
+    if (s.dash) ctx.setLineDash(s.dash);
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const px = i / (N - 1) * w;
+      const py = h - (s.d[i] - yr[0]) / (yr[1] - yr[0]) * h;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+function exp2Update() {
+  const kc = +$('sl-cut').value;
+  $('v-cut').textContent = kc;
+  const lowS = new Float64Array(N), highS = new Float64Array(N);
+  for (let k = 0; k < N; k++) { if (k < kc) lowS[k] = spec[k]; else highS[k] = spec[k]; }
+  lowArr = idct2(lowS); highArr = idct2(highS);
+  const main = [{ d: sig, c: '#1f2328', w: 2 }];
+  if (showRecon && reconArr) main.push({ d: reconArr, c: '#7852ee', w: 2.5, dash: [7, 5] });
+  plot($('cv-main'), main, [-0.75, 1.5]);
+  plot($('cv-low'),  [{ d: lowArr,  c: '#08b94e', w: 2 }], [-0.75, 1.5]);
+  plot($('cv-high'), [{ d: highArr, c: '#ec7500', w: 2 }], [-0.85, 0.85]);
+}
+$('sl-cut').addEventListener('input', () => { showRecon = false; $('recon-msg').style.display = 'none'; exp2Update(); });
+$('chk-noise').addEventListener('change', e => {
+  noiseOn = e.target.checked;
+  sig = buildSignal(); spec = dct2(sig);
+  showRecon = false; $('recon-msg').style.display = 'none';
+  exp2Update();
+});
+$('btn-recon').addEventListener('click', () => {
+  reconArr = new Float64Array(N);
+  let err = 0;
+  for (let i = 0; i < N; i++) {
+    reconArr[i] = lowArr[i] + highArr[i];
+    err = Math.max(err, Math.abs(reconArr[i] - sig[i]));
+  }
+  showRecon = true;
+  const m = $('recon-msg');
+  m.style.display = 'block';
+  m.textContent = `🔁 低頻 + 高頻 疊回(紫色虛線):max |重組 − 原訊號| = ${err.toExponential(1)} ≈ 0 → M + (1−M) = 1,無損 ✓`;
+  exp2Update();
+});
+window.addEventListener('resize', exp2Update);
+exp2Update();
+
+/* ════════ 實驗 3|sigmoid vs softmax ════════ */
+const sP = $('sl-p'), sC = $('sl-c');
+const sigm = x => 1 / (1 + Math.exp(-x));
+function exp3Update() {
+  const p = +sP.value, c = +sC.value;
+  $('v-p').textContent = (p >= 0 ? '+' : '') + p.toFixed(1);
+  $('v-c').textContent = (c >= 0 ? '+' : '') + c.toFixed(1);
+  const ep = Math.exp(p), ec = Math.exp(c);
+  const smp = ep / (ep + ec), smc = ec / (ep + ec);
+  const sgp = sigm(p), sgc = sigm(c);
+  $('sm-p').style.width = (smp * 100) + '%'; $('smv-p').textContent = (smp * 100).toFixed(1) + '%';
+  $('sm-c').style.width = (smc * 100) + '%'; $('smv-c').textContent = (smc * 100).toFixed(1) + '%';
+  $('sg-p').style.width = (sgp * 100) + '%'; $('sgv-p').textContent = (sgp * 100).toFixed(1) + '%';
+  $('sg-c').style.width = (sgc * 100) + '%'; $('sgv-c').textContent = (sgc * 100).toFixed(1) + '%';
+  $('sm-sum').textContent = `總和 = ${((smp + smc) * 100).toFixed(1)}%(永遠固定 = 1)`;
+  $('sg-sum').textContent = `總和 = ${((sgp + sgc) * 100).toFixed(1)}%(不必為 1)`;
+  const box = $('exp3-insight');
+  if (sgp > 0.7 && sgc > 0.7) {
+    box.classList.add('star');
+    box.textContent = `⭐ 同一位置同時高 person(${(sgp*100).toFixed(0)}%)又高 car(${(sgc*100).toFixed(0)}%)—— 只有 sigmoid 做得到!softmax 被迫互斥地分配(${(smp*100).toFixed(0)}% / ${(smc*100).toFixed(0)}%,總和鎖死 = 1)。一張圖可同時有 person 跟 car,這就是 Step 2 選 sigmoid 的原因。`;
+  } else {
+    box.classList.remove('star');
+    box.textContent = 'softmax 強迫互斥:一個類別變高,另一個必被壓低(總和恆 = 1)。sigmoid 讓每個類別獨立判斷、互不影響。試著把兩條滑桿都拉高(例如都 +2),看看誰能「同時是高 person 又高 car」。';
+  }
+}
+[sP, sC].forEach(el => el.addEventListener('input', exp3Update));
+exp3Update();
+
+/* ════════ 實驗 4|自我檢驗測驗 ════════ */
+const QUIZ = [
+ {p:'Part 1', q:'(256, 80, 80) 的第一個 256 是什麼意思?(通道/高/寬?)',
+  a:'是通道數(Channels)。backbone 把每個位置從 R/G/B 三個值加深成 256 維抽象特徵(例如「這區域 80% 像狗、有毛茸茸紋理」),後兩個 80 才是高與寬。'},
+ {p:'Part 1', q:'為什麼要用三種解析度(80×80 / 40×40 / 20×20),不用一種?',
+  a:'因為一張圖裡物件大小差很多:公車佔 400×300 像素、飛鳥只佔 20×15,單一解析度搞不定。80×80 每格 8×8 像素抓小物件,40×40 抓中物件,20×20 抓大物件加高層語意。'},
+ {p:'Part 1', q:'FPN 在偵測器哪個位置?它修補了什麼問題?',
+  a:'在 backbone 和 head 之間,也就是 neck。它修補「高解析層(P3)細節有但語意弱、低解析層(P5)語意強但細節弱」的不平衡,處理後每個尺度都細節 + 語意兼備。'},
+ {p:'Part 0 / Part 7', q:'Bridging RGB-IR 的輸入有幾個?各是什麼形狀?',
+  a:'三個:RGB 影像 (3, 640, 640)、IR 熱影像 (1, 640, 640)、文字 prompt 如 ["person", "car"](經 CLIP 編成 (2, 512))。輸出是 bbox + label + score。'},
+ {p:'Part 3 · Step 1', q:'為什麼文字 query Q 只算一次、RGB 跟 IR 共用?不能各算各的嗎?',
+  a:'共用同一個 Q 才是「橋」的意義:兩個模態被同一個問題 query,回應才能逐位置直接比較,才拆得出共識與差異。各算各的 Q 就失去共同語言,A_rgb 與 A_ir 無法對照。'},
+ {p:'Part 3 · Step 3', q:'M_cons 跟 M_dis 的物理意義各是什麼?',
+  a:'M_cons = A_ir·A_rgb 是雙模態共識:兩邊都看到,是鐵證。M_dis = A_ir·(1−A_rgb) 是 IR 獨家差異訊號:RGB 沒看到但 IR 很確定(如黑暗中的人)。且 M_cons + M_dis = A_ir,IR 的響應被無損拆成兩路。'},
+ {p:'Part 3 · Step 3', q:'位置 D 上 A_rgb = 0.5、A_ir = 0.5,M_cons 跟 M_dis 各多少?',
+  a:'M_cons = 0.5×0.5 = 0.25;M_dis = 0.5×(1−0.5) = 0.25。兩者一樣大:IR 的響應一半有 RGB 背書、一半沒有,而且加起來剛好等於 A_ir = 0.5(無損拆解)。'},
+ {p:'Part 3 · Step 4', q:'重校準若寫成 X_ir × β·M_cons(不加 1),會發生什麼?',
+  a:'沒響應的背景位置 M_cons ≈ 0,IR 特徵會被乘 0 整個抹掉。加上 1 之後背景處增益 = 1×1,特徵原樣保留 ——「1 +」確保「沒響應就不改」,是這個設計的魂。'},
+ {p:'Part 4', q:'為什麼選 Text→Vision 而不是 Vision→Text?',
+  a:'t→v 讓每個類別當主考官,主動到視覺特徵裡撈自己的證據區域,乾淨。反過來 v→t 是每個 pixel 去類別中找最像的,背景 pixel 也會投票,把分數弄亂。'},
+ {p:'Part 4', q:'單向 alignment 為什麼不夠,要做雙向?',
+  a:'只做 t→v,文字 query 還是 CLIP 的通用概念,撈證據不夠準;只做 v→t,文字更新了但視覺特徵沒精煉。雙向閉環:先精煉視覺、再用精煉視覺更新文字,最後用更新後的文字分類才最準。'},
+ {p:'Part 5', q:'為什麼 IR 影像的主要訊號是低頻?',
+  a:'IR 是熱輻射強度的灰階圖:熱會擴散所以邊緣模糊,又不依賴反射所以紋理稀少,主導訊號是整塊變化緩慢的熱分布 —— 這正是低頻。高頻(輪廓邊緣)只是次要訊號。'},
+ {p:'Part 5', q:'DCT 把影像變成什麼?shape 有變嗎?',
+  a:'把空間域訊號分解成「空間頻率」成分:低頻 = 大塊緩慢變化、高頻 = 邊緣與紋理。shape 完全不變(如 (32,160,160) 還是 (32,160,160)),變的只是每個位置「值的意義」—— 從像素強度變成頻率分量強度。'},
+ {p:'Part 5', q:'可學 mask M 在哪個域操作?它怎麼保證無損?',
+  a:'在頻域:DCT 變換後對頻譜做逐元素乘法,M 選低頻分支、(1−M) 選高頻分支。因為 M + (1−M) = 1,兩分支完整覆蓋所有頻率,合起來不丟任何資訊。'},
+ {p:'Part 5', q:'Ghost Module 怎麼省參數?',
+  a:'只用普通 conv 算一半的 channel,另一半用便宜的 depthwise conv 從這一半「線性合成」出來(ghost features),參數約砍 50%。原理是 CNN 學出的特徵很多冗餘、很多 channel 長得像。'},
+ {p:'Part 5', q:'LiteDCTGhost 1.05M 參數為什麼比 ResNet50 的 24.20M 還強(mAP +5.1pp)?',
+  a:'ResNet50 對 IR 是「過參數化錯置」:24M 參數主要在學 IR 根本沒有的高頻紋理,沒用還會干擾。LiteDCTGhost 用對的歸納偏誤(頻率分離)讓 1M 參數精準命中需要的特徵 —— 對的歸納偏誤 > 大模型暴力壓。'},
+ {p:'Part 6', q:'LLMDet 跟 MM Grounding DINO 架構差在哪?換成別的 detector 行嗎?',
+  a:'推論架構完全一樣 —— LLMDet 不是新架構,是改訓練方式:加一個 LLM 在訓練時當家教提供 caption 監督。這套方法論是通用的,任何 detector 都可以接 LLM co-train、推論時丟掉。'},
+ {p:'Part 6', q:'為什麼推論時 LLM 可以丟掉,還能享受好處?',
+  a:'LLM 只在訓練時透過 caption loss 提供梯度,把豐富語意「灌進」detector 的權重裡;權重學好之後,推論只跑 MM-GDINO 本體,額外開銷 0%。這就是「訓練時用、推論時白嫖」。'},
+ {p:'Part 6', q:'單獨用 region-level captioning 為什麼沒幫助(+0.0 AP)?',
+  a:'region 短 phrase 大多只是類別名的重複("young man"、"dog"),資訊量低。要跟 image-level 長 caption 合用才互補:整體語意 + 局部錨定,兩者一起才解鎖 +3.3 AP。'},
+ {p:'Part 6', q:'為什麼要兩階段訓練,不能直接 end-to-end?',
+  a:'detector 跟 LLM 是兩個獨立預訓練的模型,特徵空間沒對齊,直接 end-to-end 訓梯度會搞壞兩邊。所以 Step 1 先凍結兩者、只訓 projector 學會「翻譯」,Step 2 再解凍 co-train(LLM 用 LoRA)。'},
+ {p:'Part 6 / Part 7', q:'LLM caption 比起 class id 的「資訊量優勢」是什麼?',
+  a:'class id 只有一個編號(如 17 = dog);caption 還帶品種、年紀、屬性、背景脈絡、遮擋語意等,是 rich label,資訊量約多 100 倍。模型被迫學到這些細粒度概念,泛化更好。'},
+];
+const QKEY = 'rgbir-playground-quiz-v1';
+const RING_C = 2 * Math.PI * 30; // 188.5
+function freshState() { return { queue: QUIZ.map((_, i) => i), firstTry: {}, seen: [] }; }
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(QKEY));
+    if (s && Array.isArray(s.queue) && Array.isArray(s.seen) && s.firstTry &&
+        s.queue.every(i => Number.isInteger(i) && i >= 0 && i < QUIZ.length)) return s;
+  } catch (e) {}
+  return freshState();
+}
+let qs = loadState();
+function saveState() { try { localStorage.setItem(QKEY, JSON.stringify(qs)); } catch (e) {} }
+
+const flipcard = $('flipcard'), flipInner = $('flip-inner');
+function unflipInstant() {
+  flipInner.classList.add('noanim');
+  flipcard.classList.remove('flipped');
+  void flipInner.offsetWidth;
+  flipInner.classList.remove('noanim');
+}
+function renderQuiz() {
+  const total = QUIZ.length;
+  const answered = qs.seen.length;
+  const correct = Object.values(qs.firstTry).filter(Boolean).length;
+  $('ring-num').textContent = correct;
+  $('ring-fg').style.strokeDashoffset = RING_C * (1 - answered / total);
+  $('quiz-stats').innerHTML = `已作答 <b>${answered} / ${total}</b> 題 · 首次答對 <b>${correct}</b> 題`;
+  if (qs.queue.length === 0) {
+    flipcard.style.display = 'none';
+    $('quiz-done').style.display = 'block';
+    $('done-stats').textContent = `共 ${total} 題全部過關 · 首次答對 ${correct} / ${total}`;
+    $('queue-info').textContent = '';
+    return;
+  }
+  flipcard.style.display = '';
+  $('quiz-done').style.display = 'none';
+  const item = QUIZ[qs.queue[0]];
+  $('q-part-f').textContent = '出處:' + item.p;
+  $('q-part-b').textContent = '出處:' + item.p;
+  $('q-text').textContent = item.q;
+  $('a-text').textContent = item.a;
+  $('queue-info').textContent = `佇列剩 ${qs.queue.length} 題(答錯的會排到尾端再抽)`;
+}
+flipcard.addEventListener('click', () => flipcard.classList.toggle('flipped'));
+function mark(correct) {
+  const id = qs.queue.shift();
+  if (!qs.seen.includes(id)) { qs.seen.push(id); qs.firstTry[id] = correct; }
+  if (!correct) qs.queue.push(id);
+  saveState();
+  unflipInstant();
+  renderQuiz();
+}
+$('btn-correct').addEventListener('click', e => { e.stopPropagation(); mark(true); });
+$('btn-wrong').addEventListener('click',  e => { e.stopPropagation(); mark(false); });
+function resetQuiz() {
+  qs = freshState();
+  try { localStorage.removeItem(QKEY); } catch (e) {}
+  unflipInstant();
+  renderQuiz();
+}
+$('btn-reset').addEventListener('click', () => { if (confirm('確定重置測驗進度?')) resetQuiz(); });
+$('btn-again').addEventListener('click', resetQuiz);
+renderQuiz();
+</script>
+</body>
+</html>
