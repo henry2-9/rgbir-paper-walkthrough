@@ -40,6 +40,8 @@ h1.pg{font-size:1.7rem;margin:0 0 6px}
 .b-status{background:rgba(236,117,0,.12);color:#b35a00}
 .pmeta a{font-size:.82rem;color:var(--accent);text-decoration:none;border:1px solid rgba(9,105,218,.3);border-radius:999px;padding:3px 11px}
 .pmeta a:hover{background:rgba(9,105,218,.08)}
+.demoblock{display:none;border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;margin:0 0 26px;background:linear-gradient(180deg,#fbfcfd,#fff);box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.demoblock.on{display:block;animation:riseIn .35s ease}
 article{display:none}
 article.on{display:block;animation:riseIn .35s ease}
 article h1{font-size:1.4rem;border-bottom:1px solid var(--line);padding-bottom:.3em;margin-top:1.9em;scroll-margin-top:110px}
@@ -70,7 +72,7 @@ article a{color:var(--accent)}
 </div></nav>
 <div class="wrap">
 <h1 class="pg anim">📚 論文庫</h1>
-<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心已有完整互動走讀;三篇新進論文(2026-06 底新增)在下方展開。</p>
+<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心已有完整互動走讀;三篇新進論文各附**可動手玩的互動走讀**(模式切換、事件相機模擬、成本計算機)+ AI 導讀全文。</p>
 <div class="disclaim anim" style="animation-delay:.1s">⚠️ 下方三篇為 <strong>AI 輔助整理的導讀</strong>(尚未逐字精讀原文),重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
 
 <div class="deepdive anim" style="animation-delay:.15s">
@@ -109,8 +111,11 @@ article a{color:var(--accent)}
 </div>
 
 <div id="loading">載入中…</div>
+<div id="demo-yoloe" class="demoblock on"></div>
 <article id="p-yoloe" class="on"></article>
+<div id="demo-eventgpt" class="demoblock"></div>
 <article id="p-eventgpt"></article>
+<div id="demo-rtdetr" class="demoblock"></div>
 <article id="p-rtdetr"></article>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
@@ -135,10 +140,19 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
   document.querySelectorAll('.tab').forEach(b => { b.classList.toggle('on', b===btn); b.setAttribute('aria-selected', b===btn); });
   papers.forEach(p => {
     document.getElementById('p-'+p).classList.toggle('on', p===btn.dataset.p);
+    document.getElementById('demo-'+p).classList.toggle('on', p===btn.dataset.p);
     document.getElementById('meta-'+p).hidden = (p!==btn.dataset.p);
   });
   window.scrollTo({top: document.querySelector('.deepdive').getBoundingClientRect().bottom + window.scrollY - 120, behavior:'auto'});
 }));
+</script>
+<script src="papers/demo-yoloe.js"></script>
+<script src="papers/demo-eventgpt.js"></script>
+<script src="papers/demo-rtdetr.js"></script>
+<script>
+if (window.initYoloeDemo) initYoloeDemo(document.getElementById('demo-yoloe'));
+if (window.initEventgptDemo) initEventgptDemo(document.getElementById('demo-eventgpt'));
+if (window.initRtdetrDemo) initRtdetrDemo(document.getElementById('demo-rtdetr'));
 </script>
 </body>
 </html>
