@@ -90,6 +90,15 @@ a.card:hover,a.card:focus-visible{box-shadow:0 8px 22px rgba(0,0,0,.1);transform
 @keyframes progGrow{0%{width:8%}70%,100%{width:94%}}
 .card:hover .mini-prog .fl,.card:focus-visible .mini-prog .fl{animation:progGrow 1.5s ease-out infinite}
 
+/* 論文庫卡:書堆逐本亮起 */
+.mini-books{display:flex;gap:5px;align-items:flex-end;height:46px}
+.mini-books .bk2{width:13px;border-radius:3px 3px 0 0;background:#e3e8ee;transition:background .3s}
+.mini-books .h1{height:30px}.mini-books .h2{height:38px}.mini-books .h3{height:26px}.mini-books .h4{height:42px}.mini-books .h5{height:34px}
+@keyframes bookLight{0%,15%{background:#e3e8ee}35%,100%{background:var(--red)}}
+.card:hover .mini-books .bk2,.card:focus-visible .mini-books .bk2{animation:bookLight 1.6s ease forwards}
+.card:hover .mini-books .b2{animation-delay:.15s}.card:hover .mini-books .b3{animation-delay:.3s}
+.card:hover .mini-books .b4{animation-delay:.45s}.card:hover .mini-books .b5{animation-delay:.6s}
+
 /* ===== 30 秒看懂 ===== */
 .quick{border:1px solid var(--line);border-radius:16px;padding:24px 22px 22px;background:linear-gradient(180deg,#fbfcfd,#fff);margin-bottom:40px}
 .quick h2{margin:0 0 14px;font-size:1.2rem}
@@ -129,7 +138,8 @@ footer{margin-top:28px;font-size:.8rem;color:var(--muted)}
     <a href="slides.html">🎞 簡報</a>
     <a href="map.html">🗺 地圖</a>
     <a href="playground.html">🧪 實驗室</a>
-    <a href="walkthrough.html">📖 全文</a>
+    <a href="papers.html">📚 論文庫</a>
+<a href="walkthrough.html">📖 全文</a>
   </div>
 </nav>
 
@@ -276,6 +286,15 @@ footer{margin-top:28px;font-size:.8rem;color:var(--muted)}
     </div>
     <h2>📖 白話版全文</h2>
     <p>完整講解(Part 0–7):地基、三個模組逐步拆解、LLMDet 訓練改革、自我檢驗題。</p>
+  </a>
+  <a class="card anim" style="--d:.85s" href="papers.html">
+    <div class="mini" aria-hidden="true">
+      <div class="mini-books">
+        <div class="bk2 h1 b1"></div><div class="bk2 h2 b2"></div><div class="bk2 h3 b3"></div><div class="bk2 h4 b4"></div><div class="bk2 h5 b5"></div>
+      </div>
+    </div>
+    <h2>📚 論文庫</h2>
+    <p>研究地圖上的論文解讀:YOLOE、EventGPT、RT-DETR 三篇新進導讀 + 兩篇核心的走讀入口。</p>
   </a>
 </div>
 

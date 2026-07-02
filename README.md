@@ -7,5 +7,6 @@
 - 🧪 [互動實驗室](playground.html) — Bi-Support 滑桿實驗、DCT 頻率拆解、sigmoid vs softmax、20 題翻卡測驗
 - 🗺 [架構地圖](map.html) — 可縮放的 pipeline 資料流圖(含 ▶ 19 步導覽模式)
 - 📖 [白話版全文](walkthrough.html) — Part 0–7 完整講解
+- 📚 [論文庫](papers.html) — YOLOE / EventGPT / RT-DETR 三篇 AI 導讀 + 核心兩篇的走讀入口
 
 > 內容為個人學習用筆記,引用請以原論文為準。

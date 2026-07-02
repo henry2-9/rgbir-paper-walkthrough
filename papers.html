@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>論文庫 · RGB-IR × OVD 論文走讀</title>
+<style>
+:root{--ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa;
+--red:#e93147;--orange:#ec7500;--yellow:#e0ac00;--green:#08b94e;--teal:#00bfbc;--purple:#7852ee}
+*{box-sizing:border-box}
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.8}
+nav.top{position:sticky;top:0;z-index:40;background:#ffffffe6;border-bottom:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+nav.top .in{max-width:960px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;font-size:14px;overflow-x:auto;white-space:nowrap}
+nav.top a{color:var(--muted);text-decoration:none;padding:3px 11px;border-radius:999px;transition:color .2s,background .2s}
+nav.top a:hover{color:var(--accent);background:rgba(9,105,218,.07)}
+nav.top a.current{color:var(--accent);font-weight:700;background:rgba(9,105,218,.1)}
+.wrap{max-width:900px;margin:0 auto;padding:34px 20px 90px}
+@keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.anim{animation:riseIn .5s ease backwards}
+h1.pg{font-size:1.7rem;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 22px;font-size:.95rem}
+.disclaim{padding:12px 16px;background:#fff8ec;border:1px solid #f0d9ac;border-left:4px solid var(--orange);border-radius:0 10px 10px 0;font-size:.87rem;color:#6b5218;margin-bottom:26px}
+.deepdive{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:34px}
+.dd{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:linear-gradient(180deg,#fbfcfd,#fff);transition:box-shadow .2s,transform .2s}
+.dd:hover{box-shadow:0 8px 20px rgba(0,0,0,.09);transform:translateY(-2px)}
+.dd h3{margin:0 0 6px;font-size:1rem}
+.dd p{margin:0 0 10px;font-size:.85rem;color:var(--muted)}
+.dd .links{display:flex;gap:8px;flex-wrap:wrap}
+.dd .links a{font-size:.82rem;color:var(--accent);text-decoration:none;border:1px solid rgba(9,105,218,.3);border-radius:999px;padding:3px 11px;transition:background .15s}
+.dd .links a:hover{background:rgba(9,105,218,.08)}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 20px;position:sticky;top:44px;z-index:30;background:#ffffffee;backdrop-filter:blur(8px);padding:10px 0;border-bottom:1px solid var(--line)}
+.tab{appearance:none;font-family:inherit;font-size:.95rem;border:1.5px solid var(--line);background:#fff;color:var(--ink);padding:8px 18px;border-radius:999px;cursor:pointer;transition:all .18s ease}
+.tab:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.pmeta[hidden]{display:none!important}
+.pmeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
+.badge{font-size:.78rem;font-weight:700;border-radius:999px;padding:3px 12px}
+.b-venue{background:rgba(120,82,238,.12);color:#5a3bc4}
+.b-status{background:rgba(236,117,0,.12);color:#b35a00}
+.pmeta a{font-size:.82rem;color:var(--accent);text-decoration:none;border:1px solid rgba(9,105,218,.3);border-radius:999px;padding:3px 11px}
+.pmeta a:hover{background:rgba(9,105,218,.08)}
+article{display:none}
+article.on{display:block;animation:riseIn .35s ease}
+article h1{font-size:1.4rem;border-bottom:1px solid var(--line);padding-bottom:.3em;margin-top:1.9em;scroll-margin-top:110px}
+article h2{font-size:1.15rem;margin-top:1.6em}
+article h3{font-size:1rem;margin-top:1.3em}
+article blockquote{margin:1em 0;padding:.55em 1.05em;background:var(--bg);border-left:4px solid #7aa2d8;border-radius:0 8px 8px 0;color:#39424d}
+article code{background:#f0f1f3;border-radius:5px;padding:.1em .35em;font-size:.87em;color:#b93939}
+article pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto}
+article pre.mermaid{background:none;border:none;text-align:center}
+article pre code{background:none;color:inherit;padding:0}
+article table{border-collapse:collapse;display:block;overflow-x:auto;margin:1em 0}
+article th,article td{border:1px solid var(--line);padding:.42em .75em;font-size:.9em}
+article th{background:var(--bg)}
+article hr{border:none;border-top:1px solid var(--line);margin:2.2em 0}
+article a{color:var(--accent)}
+#loading{color:var(--muted);padding:50px 0;text-align:center}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}html{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<nav class="top"><div class="in">
+<a href="index.html">⌂ 首頁</a>
+<a href="slides.html">🎞 簡報</a>
+<a href="map.html">🗺 地圖</a>
+<a href="playground.html">🧪 實驗室</a>
+<a href="papers.html" class="current" aria-current="page">📚 論文庫</a>
+<a href="walkthrough.html">📖 全文</a>
+</div></nav>
+<div class="wrap">
+<h1 class="pg anim">📚 論文庫</h1>
+<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心已有完整互動走讀;三篇新進論文(2026-06 底新增)在下方展開。</p>
+<div class="disclaim anim" style="animation-delay:.1s">⚠️ 下方三篇為 <strong>AI 輔助整理的導讀</strong>(尚未逐字精讀原文),重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
+
+<div class="deepdive anim" style="animation-delay:.15s">
+<div class="dd">
+<h3>🌉 Bridging the RGB-IR Gap (2026)</h3>
+<p>文字當 RGB↔IR 語意橋 + Bi-Support 拆解 + LiteDCTGhost。本站主角,有完整互動走讀。</p>
+<div class="links"><a href="map.html">🗺 架構地圖</a><a href="playground.html">🧪 Bi-Support 實驗</a><a href="walkthrough.html#%F0%9F%93%A6%20Part%202%3ABridging%20RGB-IR%20%E6%95%B4%E9%AB%94%E6%9E%B6%E6%A7%8B%E9%B3%A5%E7%9E%B0">📖 全文 Part 2–5</a></div>
+</div>
+<div class="dd">
+<h3>🤖 LLMDet (CVPR 2025)</h3>
+<p>LLM 當訓練家教:雙任務 captioning 監督,推論時整個丟掉、零額外開銷。</p>
+<div class="links"><a href="walkthrough.html#%F0%9F%A4%96%20Part%206%3ALLMDet%20%E2%80%94%20%E8%A8%93%E7%B7%B4%E6%94%B9%E9%9D%A9%EF%BC%88%E8%B6%85%E8%A9%B3%E7%B4%B0%E7%89%88%EF%BC%89">📖 全文 Part 6</a><a href="slides.html">🎞 簡報版</a></div>
+</div>
+</div>
+
+<div class="tabs anim" style="animation-delay:.2s" role="tablist">
+<button class="tab on" data-p="yoloe" role="tab" aria-selected="true">🎯 YOLOE (ICCV 2025)</button>
+<button class="tab" data-p="eventgpt" role="tab" aria-selected="false">📸 EventGPT (CVPR 2025)</button>
+<button class="tab" data-p="rtdetr" role="tab" aria-selected="false">⚡ RT-DETR (CVPR 2024)</button>
+</div>
+
+<div class="pmeta" id="meta-yoloe">
+<span class="badge b-venue">ICCV 2025 · THU-MIG</span><span class="badge b-status">AI 導讀</span>
+<a href="https://arxiv.org/abs/2503.07465" target="_blank" rel="noopener">arXiv 2503.07465</a>
+<a href="https://github.com/THU-MIG/yoloe" target="_blank" rel="noopener">GitHub</a>
+</div>
+<div class="pmeta" id="meta-eventgpt" hidden>
+<span class="badge b-venue">CVPR 2025</span><span class="badge b-status">AI 導讀</span>
+<a href="https://arxiv.org/abs/2412.00832" target="_blank" rel="noopener">arXiv 2412.00832</a>
+<a href="https://github.com/XduSyL/EventGPT" target="_blank" rel="noopener">GitHub</a>
+</div>
+<div class="pmeta" id="meta-rtdetr" hidden>
+<span class="badge b-venue">CVPR 2024 · Baidu</span><span class="badge b-status">AI 導讀</span>
+<a href="https://arxiv.org/abs/2304.08069" target="_blank" rel="noopener">arXiv 2304.08069</a>
+<a href="https://github.com/lyuwenyu/RT-DETR" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+<div id="loading">載入中…</div>
+<article id="p-yoloe" class="on"></article>
+<article id="p-eventgpt"></article>
+<article id="p-rtdetr"></article>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const renderer = new marked.Renderer();
+renderer.code = function (code, lang) {
+  if (lang === 'mermaid') return `<pre class="mermaid">${esc(code)}</pre>`;
+  return `<pre><code>${esc(code)}</code></pre>`;
+};
+marked.setOptions({renderer, mangle:false, headerIds:false, gfm:true});
+mermaid.initialize({startOnLoad:false, theme:'neutral'});
+const papers = ['yoloe','eventgpt','rtdetr'];
+Promise.all(papers.map(p => fetch('papers/'+p+'.md').then(r => r.text())))
+  .then(async mds => {
+    mds.forEach((md,i) => { document.getElementById('p-'+papers[i]).innerHTML = marked.parse(md); });
+    document.getElementById('loading').remove();
+    await mermaid.run({querySelector: '.mermaid'});
+  });
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(b => { b.classList.toggle('on', b===btn); b.setAttribute('aria-selected', b===btn); });
+  papers.forEach(p => {
+    document.getElementById('p-'+p).classList.toggle('on', p===btn.dataset.p);
+    document.getElementById('meta-'+p).hidden = (p!==btn.dataset.p);
+  });
+  window.scrollTo({top: document.querySelector('.deepdive').getBoundingClientRect().bottom + window.scrollY - 120, behavior:'auto'});
+}));
+</script>
+</body>
+</html>
