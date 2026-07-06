@@ -72,7 +72,7 @@ article a{color:var(--accent)}
 </div></nav>
 <div class="wrap">
 <h1 class="pg anim">📚 論文庫</h1>
-<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心已有完整互動走讀;三篇新進論文各附**可動手玩的互動走讀**(模式切換、事件相機模擬、成本計算機)+ AI 導讀全文。</p>
+<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方五篇論文導讀中,YOLOE / EventGPT / RT-DETR 附可動手玩的互動實驗。</p>
 <div class="disclaim anim" style="animation-delay:.1s">⚠️ 下方三篇為 <strong>AI 輔助整理的導讀</strong>(尚未逐字精讀原文),重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
 
 <div class="deepdive anim" style="animation-delay:.15s">
@@ -90,8 +90,10 @@ article a{color:var(--accent)}
 
 <div class="tabs anim" style="animation-delay:.2s" role="tablist">
 <button class="tab on" data-p="yoloe" role="tab" aria-selected="true">🎯 YOLOE (ICCV 2025)</button>
-<button class="tab" data-p="eventgpt" role="tab" aria-selected="false">📸 EventGPT (CVPR 2025)</button>
+<button class="tab" data-p="yoloworld" role="tab" aria-selected="false">🌍 YOLO-World (CVPR 2024)</button>
 <button class="tab" data-p="rtdetr" role="tab" aria-selected="false">⚡ RT-DETR (CVPR 2024)</button>
+<button class="tab" data-p="rfdetr" role="tab" aria-selected="false">🏗 RF-DETR (ICLR 2026)</button>
+<button class="tab" data-p="eventgpt" role="tab" aria-selected="false">📸 EventGPT (CVPR 2025)</button>
 </div>
 
 <div class="pmeta" id="meta-yoloe">
@@ -103,6 +105,16 @@ article a{color:var(--accent)}
 <span class="badge b-venue">CVPR 2025</span><span class="badge b-status">AI 導讀</span>
 <a href="https://arxiv.org/abs/2412.00832" target="_blank" rel="noopener">arXiv 2412.00832</a>
 <a href="https://github.com/XduSyL/EventGPT" target="_blank" rel="noopener">GitHub</a>
+</div>
+<div class="pmeta" id="meta-yoloworld" hidden>
+<span class="badge b-venue">CVPR 2024 · Tencent AI Lab</span><span class="badge b-status">AI 導讀</span>
+<a href="https://arxiv.org/abs/2401.17270" target="_blank" rel="noopener">arXiv 2401.17270</a>
+<a href="https://github.com/AILab-CVC/YOLO-World" target="_blank" rel="noopener">GitHub</a>
+</div>
+<div class="pmeta" id="meta-rfdetr" hidden>
+<span class="badge b-venue">ICLR 2026 · Roboflow + CMU</span><span class="badge b-status">AI 導讀</span>
+<a href="https://arxiv.org/abs/2511.09554" target="_blank" rel="noopener">arXiv 2511.09554</a>
+<a href="https://github.com/roboflow/rf-detr" target="_blank" rel="noopener">GitHub</a>
 </div>
 <div class="pmeta" id="meta-rtdetr" hidden>
 <span class="badge b-venue">CVPR 2024 · Baidu</span><span class="badge b-status">AI 導讀</span>
@@ -117,6 +129,8 @@ article a{color:var(--accent)}
 <article id="p-eventgpt"></article>
 <div id="demo-rtdetr" class="demoblock"></div>
 <article id="p-rtdetr"></article>
+<article id="p-yoloworld"></article>
+<article id="p-rfdetr"></article>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
@@ -129,7 +143,7 @@ renderer.code = function (code, lang) {
 };
 marked.setOptions({renderer, mangle:false, headerIds:false, gfm:true});
 mermaid.initialize({startOnLoad:false, theme:'neutral'});
-const papers = ['yoloe','eventgpt','rtdetr'];
+const papers = ['yoloe','yoloworld','rtdetr','rfdetr','eventgpt'];
 Promise.all(papers.map(p => fetch('papers/'+p+'.md').then(r => r.text())))
   .then(async mds => {
     mds.forEach((md,i) => { document.getElementById('p-'+papers[i]).innerHTML = marked.parse(md); });
@@ -140,7 +154,8 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
   document.querySelectorAll('.tab').forEach(b => { b.classList.toggle('on', b===btn); b.setAttribute('aria-selected', b===btn); });
   papers.forEach(p => {
     document.getElementById('p-'+p).classList.toggle('on', p===btn.dataset.p);
-    document.getElementById('demo-'+p).classList.toggle('on', p===btn.dataset.p);
+    const dm = document.getElementById('demo-'+p);
+    if (dm) dm.classList.toggle('on', p===btn.dataset.p);
     document.getElementById('meta-'+p).hidden = (p!==btn.dataset.p);
   });
   window.scrollTo({top: document.querySelector('.deepdive').getBoundingClientRect().bottom + window.scrollY - 120, behavior:'auto'});
