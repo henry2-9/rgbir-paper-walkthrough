@@ -146,11 +146,15 @@ renderer.code = function (code, lang) {
 marked.setOptions({renderer, mangle:false, headerIds:false, gfm:true});
 mermaid.initialize({startOnLoad:false, theme:'neutral'});
 const papers = ['yoloe','yoloworld','rtdetr','rfdetr','eventgpt'];
+function renderMermaidIn(article) {
+  const nodes = article.querySelectorAll('pre.mermaid:not([data-processed])');
+  if (nodes.length) mermaid.run({nodes}).catch(e => console.warn('mermaid:', e));
+}
 Promise.all(papers.map(p => fetch('papers/'+p+'.md').then(r => r.text())))
-  .then(async mds => {
+  .then(mds => {
     mds.forEach((md,i) => { document.getElementById('p-'+papers[i]).innerHTML = marked.parse(md); });
     document.getElementById('loading').remove();
-    await mermaid.run({querySelector: '.mermaid'});
+    renderMermaidIn(document.querySelector('article.on'));
   });
 document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(b => { b.classList.toggle('on', b===btn); b.setAttribute('aria-selected', b===btn); });
@@ -160,6 +164,7 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
     if (dm) dm.classList.toggle('on', p===btn.dataset.p);
     document.getElementById('meta-'+p).hidden = (p!==btn.dataset.p);
   });
+  renderMermaidIn(document.getElementById('p-'+btn.dataset.p));
   window.scrollTo({top: document.querySelector('.deepdive').getBoundingClientRect().bottom + window.scrollY - 120, behavior:'auto'});
 }));
 </script>

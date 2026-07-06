@@ -1,11 +1,11 @@
 # 一句話總結 (TL;DR)
-> **「別追通用,為你的資料集訂做」** —— 論文同時打兩個對象:**OVD/VLM**(真實世界 OOD 泛化差 + 重)與**傳統 specialist**(YOLOv8/v11,隱性 overfit COCO、換資料集就崩)。RF-DETR 的解法:以 **DINOv2 內部大規模預訓練** + **weight-sharing NAS**,為任一目標資料集**一次訓練、搜出數千種配置的 accuracy-latency Pareto 曲線(不重訓)**。**RF-DETR-2XL 60.1 AP —— 第一個 COCO 破 60 的實時模型**;還做**分割**(RF-DETR-Seg,第一個 end-to-end NAS 偵測+分割)。⚠️ 它**不是 OVD、是 specialist** —— 對 OVD 路線而言,是一個必須認真對待的對立觀點。
+> **「別追通用,為你的資料集訂做」** —— 論文同時打兩個對象:**OVD/VLM**(真實世界 OOD 泛化差 + 重)與**傳統 specialist**(YOLOv8/v11,隱性 overfit COCO、換資料集就崩)。RF-DETR 的解法:以 **DINOv2 內部大規模預訓練** + **weight-sharing NAS**,為任一目標資料集**一次訓練、搜出數千種配置的 accuracy-latency Pareto 曲線**(不重訓)。**RF-DETR-2XL 60.1 AP —— 第一個 COCO 破 60 的實時模型**;還做**分割**(RF-DETR-Seg,第一個 end-to-end NAS 偵測+分割)。⚠️ 它**不是 OVD、是 specialist** —— 對 OVD 路線而言,是一個必須認真對待的對立觀點。
 
 ---
 
 # 2. ★ 核心論點:雙重批判(全篇靈魂)
 
-論文開宗問「**Are Specialist Detectors Over-Optimized for COCO?**」,同時否定兩條主流路:
+論文開宗問**「Are Specialist Detectors Over-Optimized for COCO?」**,同時否定兩條主流路:
 
 ```mermaid
 flowchart TD
@@ -43,7 +43,7 @@ flowchart LR
     POOL --> EL1["訓完:所有配置直接可用,不重訓"]:::el --> PAR["accuracy-latency Pareto 曲線"]
     PAR --> PICK["依硬體預算(延遲/VRAM)選一點"]
 ```
-**五個 tunable knobs(Fig 3)**——推論時調這些選 Pareto 上的點:
+**五個 tunable knobs**(Fig 3)——推論時調這些選 Pareto 上的點:
 
 | # | 維度 | 快 ← → 準 |
 |---|---|---|
@@ -75,7 +75,7 @@ flowchart LR
 - RF-DETR-Seg-N 40.3 AP^m,**勝 FastInst +5.4%、快近 10×**;RF-DETR-Seg-L 勝 MaskDINO(R50)於 fraction of runtime。
 
 ## RF100-VL(Table 4,100 真實領域資料集)—— 泛化才是重點
-- **RF-DETR-2XL 勝 GroundingDINO(tiny) 與 LLMDet (CVPR 2025)(tiny)**,只用 fraction of runtime。
+- **RF-DETR-2XL 勝 GroundingDINO(tiny) 與 LLMDet(tiny)**(CVPR 2025),只用 fraction of runtime。
 - **YOLOv8/v11 在此輸給 DETR 系,且放大模型不改善** → 坐實「YOLO overfit COCO」。
 - RT-DETR 在此勝 D-FINE(AP50)→ D-FINE 的超參 overfit COCO。
 
@@ -89,7 +89,7 @@ LW-DETR(M) 52.6 → +DINOv2 backbone **+2%** → +O365 預訓 → +weight-sharin
 「**訂做西裝 + 一次打版試穿數千種**」:
 - **OVD** = 號稱人人能穿的均碼(你的體型/資料集一穿就不合,還很重)。
 - **傳統 specialist(YOLO)** = 照「COCO 這個人」量身做的西裝,換人(換資料集)就不合。
-- **RF-DETR** = 拿一件**大廠半成品(DINOv2 預訓)**、按你的體型改(fine-tune 目標資料集),再用 **NAS 一次打版試穿數千種版型(不用每件重做)**,依你的預算(延遲/VRAM)挑一件最合身又輕的。代價:只合你穿(specialist,不通用開放詞彙)。
+- **RF-DETR** = 拿一件**大廠半成品**(DINOv2 預訓)、按你的體型改(fine-tune 目標資料集),再用 **NAS 一次打版試穿數千種版型**(不用每件重做),依你的預算(延遲/VRAM)挑一件最合身又輕的。代價:只合你穿(specialist,不通用開放詞彙)。
 
 ---
 
