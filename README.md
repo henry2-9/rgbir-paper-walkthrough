@@ -7,6 +7,6 @@
 - 🧪 [互動實驗室](playground.html) — Bi-Support 滑桿實驗、DCT 頻率拆解、sigmoid vs softmax、20 題翻卡測驗
 - 🗺 [架構地圖](map.html) — 可縮放的 pipeline 資料流圖(含 ▶ 19 步導覽模式)
 - 📖 [白話版全文](walkthrough.html) — Part 0–7 完整講解
-- 📚 [論文庫](papers.html) — 五篇論文導讀(YOLOE / YOLO-World / RT-DETR / RF-DETR / EventGPT),其中三篇附互動實驗(prompt 模式切換器、event 相機模擬器、attention 成本計算機)
+- 📚 [論文庫](papers.html) — 五篇論文導讀,每篇附互動實驗(prompt 模式切換器、範式成本對比、attention 成本計算機、NAS Pareto 選型器、event 相機模擬器)
 
 > 內容為個人學習用筆記,引用請以原論文為準。
