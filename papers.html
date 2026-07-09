@@ -38,6 +38,7 @@ h1.pg{font-size:1.7rem;margin:0 0 6px}
 .badge{font-size:.78rem;font-weight:700;border-radius:999px;padding:3px 12px}
 .b-venue{background:rgba(120,82,238,.12);color:#5a3bc4}
 .b-status{background:rgba(236,117,0,.12);color:#b35a00}
+.b-read{background:rgba(8,185,78,.12);color:#077f38}
 .pmeta a{font-size:.82rem;color:var(--accent);text-decoration:none;border:1px solid rgba(9,105,218,.3);border-radius:999px;padding:3px 11px}
 .pmeta a:hover{background:rgba(9,105,218,.08)}
 .demoblock{display:none;border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;margin:0 0 26px;background:linear-gradient(180deg,#fbfcfd,#fff);box-shadow:0 2px 10px rgba(0,0,0,.04)}
@@ -72,8 +73,8 @@ article a{color:var(--accent)}
 </div></nav>
 <div class="wrap">
 <h1 class="pg anim">📚 論文庫</h1>
-<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方五篇論文導讀**每篇都附可動手玩的互動實驗**。</p>
-<div class="disclaim anim" style="animation-delay:.1s">⚠️ 下方三篇為 <strong>AI 輔助整理的導讀</strong>(尚未逐字精讀原文),重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
+<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方六篇論文導讀,其中五篇附可動手玩的互動實驗。</p>
+<div class="disclaim anim" style="animation-delay:.1s">⚠️ 標示「AI 導讀」的分頁為 <strong>AI 輔助整理</strong>(尚未逐字精讀原文);VL-ACFDet 為已精讀筆記。重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
 
 <div class="deepdive anim" style="animation-delay:.15s">
 <div class="dd">
@@ -89,14 +90,19 @@ article a{color:var(--accent)}
 </div>
 
 <div class="tabs anim" style="animation-delay:.2s" role="tablist">
-<button class="tab on" data-p="yoloe" role="tab" aria-selected="true">🎯 YOLOE (ICCV 2025)</button>
+<button class="tab on" data-p="vlacfdet" role="tab" aria-selected="true">🌦 VL-ACFDet (IEEE MM 2025)</button>
+<button class="tab" data-p="yoloe" role="tab" aria-selected="false">🎯 YOLOE (ICCV 2025)</button>
 <button class="tab" data-p="yoloworld" role="tab" aria-selected="false">🌍 YOLO-World (CVPR 2024)</button>
 <button class="tab" data-p="rtdetr" role="tab" aria-selected="false">⚡ RT-DETR (CVPR 2024)</button>
 <button class="tab" data-p="rfdetr" role="tab" aria-selected="false">🏗 RF-DETR (ICLR 2026)</button>
 <button class="tab" data-p="eventgpt" role="tab" aria-selected="false">📸 EventGPT (CVPR 2025)</button>
 </div>
 
-<div class="pmeta" id="meta-yoloe">
+<div class="pmeta" id="meta-vlacfdet">
+<span class="badge b-venue">IEEE MultiMedia 2025 · NTUST</span><span class="badge b-read">已讀筆記</span>
+<a href="https://doi.org/10.1109/MMUL.2025.3525559" target="_blank" rel="noopener">DOI 10.1109/MMUL.2025.3525559</a>
+</div>
+<div class="pmeta" id="meta-yoloe" hidden>
 <span class="badge b-venue">ICCV 2025 · THU-MIG</span><span class="badge b-status">AI 導讀</span>
 <a href="https://arxiv.org/abs/2503.07465" target="_blank" rel="noopener">arXiv 2503.07465</a>
 <a href="https://github.com/THU-MIG/yoloe" target="_blank" rel="noopener">GitHub</a>
@@ -123,8 +129,9 @@ article a{color:var(--accent)}
 </div>
 
 <div id="loading">載入中…</div>
-<div id="demo-yoloe" class="demoblock on"></div>
-<article id="p-yoloe" class="on"></article>
+<article id="p-vlacfdet" class="on"></article>
+<div id="demo-yoloe" class="demoblock"></div>
+<article id="p-yoloe"></article>
 <div id="demo-eventgpt" class="demoblock"></div>
 <article id="p-eventgpt"></article>
 <div id="demo-rtdetr" class="demoblock"></div>
@@ -145,7 +152,7 @@ renderer.code = function (code, lang) {
 };
 marked.setOptions({renderer, mangle:false, headerIds:false, gfm:true});
 mermaid.initialize({startOnLoad:false, theme:'neutral'});
-const papers = ['yoloe','yoloworld','rtdetr','rfdetr','eventgpt'];
+const papers = ['vlacfdet','yoloe','yoloworld','rtdetr','rfdetr','eventgpt'];
 function renderMermaidIn(article) {
   const nodes = article.querySelectorAll('pre.mermaid:not([data-processed])');
   if (nodes.length) mermaid.run({nodes}).catch(e => console.warn('mermaid:', e));

@@ -60,6 +60,9 @@ flowchart TD
 
 這是全篇最重要的設計,也是「為什麼能即時」的答案。
 
+
+*RT-DETR 整體架構(論文 Fig. 4):backbone 的 S3/S4/S5 進入 Efficient Hybrid Encoder —— **AIFI 只在最高層 S5 做 self-attention**,**CCFM(圖中 CCFF 融合塊)以純 CNN 做跨尺度融合**,最後由 Query Selection 選出 top-K 特徵送進 decoder。*
+
 ### 問題:多尺度 self-attention 為何是瓶頸
 DINO 式 encoder 把 S3+S4+S5 攤平成一長串 token 一起做 attention。S3 token 數最多 → 主導計算量。但**低層特徵(S3)解析度高、語義卻最弱**(只有邊緣紋理),花最貴的 attention 在它身上,CP 值極低。
 
@@ -98,6 +101,9 @@ flowchart TD
 | C | B 再加 CNN 跨尺度融合 | 快 | ↑ |
 | **D = AIFI + CCFM(本文)** | intra(attn,只S5)+ cross(CNN) 解耦 | **最快** | **最高** |
 
+
+*Encoder 變體 A→E 的逐步演化(論文 Fig. 5):從 (A) DINO 式多尺度 attention 出發,逐步「解耦 intra-scale 交互與 cross-scale 融合」,直到 (D/E) 只在最高層 S5 做 attention(AIFI)+ 純 CNN 跨尺度融合(CCFM)。對應上表由 A→D 的提速與 AP 不降反升。*
+
 > 重點不是某個精確 AP 數字(以原文為準),而是趨勢:**把 attention 從「全尺度」縮到「只 S5」,速度大增而 AP 不降反升** — 證明了低層 attention 確實是浪費。
 
 ---
@@ -125,6 +131,9 @@ $$\text{分類目標} \;\propto\; \text{IoU}(\hat b, b_{gt})$$
 
 > 論文用「分類分數 vs IoU」散點圖佐證:IoU-aware 之後,高分類分數的點同時也高 IoU(兩者正相關),vanilla 則散開。
 
+
+*被選中 encoder 特徵的「分類分數 vs IoU」散點圖(論文 Fig. 6):IoU-aware 選出的 query,分類分數與定位品質(IoU)明顯正相關、集中於右上;vanilla 則兩者脫鉤而散開。左上=自信卻框歪、右下=框準卻沒信心,都是 decoder 的壞起點。*
+
 ---
 
 ## ③ Decoder + 速度彈性
@@ -142,6 +151,9 @@ $$\text{分類目標} \;\propto\; \text{IoU}(\hat b, b_{gt})$$
 1. **兩個超參數**:NMS 需要 score threshold 與 IoU threshold。兩者都影響最終 AP,得逐資料集調。
 2. **延遲不確定**:NMS 要先濾掉低分框、再對剩下的兩兩比 IoU 去重。**剩餘框數越多,NMS 越慢** → 端到端延遲隨「畫面裡有多少物件 / 閾值設多少」浮動,不是常數。
 3. RT-DETR **沒有 NMS** → 延遲是確定的、無超參數、對 TensorRT 等部署引擎更友好。
+
+
+*不同信心閾值下 NMS 後的剩餘框數(論文 Fig. 3):剩餘框越多,NMS 兩兩比對 IoU 就越久 —— 這正是「端到端延遲不確定」的根源;score/IoU 閾值一調,剩餘框數、延遲與 AP 全跟著變,凸顯 NMS 的超參數敏感與不可控延遲。*
 
 > 所以「RT-DETR 比 YOLO 快」不只贏在 backbone/encoder,還贏在**省掉了 NMS 這段不可控的後處理**。
 
@@ -162,6 +174,9 @@ $$\text{分類目標} \;\propto\; \text{IoU}(\hat b, b_{gt})$$
 | **RT-DETR-X** | HGNetv2 | **54.8** | **74** | ✅ |
 
 > **同精度更快、同速度更準**,且全程 NMS-free。**首次有 DETR 系在 T4 上的速度-精度全面壓過同期 YOLO**。
+
+
+*RT-DETR vs YOLO 系的速度-精度曲線(COCO,橫軸含端到端延遲;論文 Fig. 1):RT-DETR 各版本(R18/R34/R50/R101 與 L/X)整體位於 YOLO 系(v5/v6/v7/v8)左上方 —— 同精度更快、同速度更準,且全程無 NMS。*
 
 ## Scale 版本
 - backbone 可選 **ResNet R18/R34/R50/R101**(學術對比)或 **HGNetv2-L/X**(部署優化)。

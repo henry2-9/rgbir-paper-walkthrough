@@ -1,5 +1,5 @@
 # 一句話總結 (TL;DR)
-> **YOLOv8 + CLIP text encoder + 重新設計的 vision-language PAN(RepVL-PAN)** —— **第一個即時開放詞彙偵測器**,LVIS **35.4 AP**、re-param 後 **52 FPS**(V100),比 Grounding DINO **+8 AP、快 35×**。核心創新是 **prompt-then-detect** 範式:提示先編成 offline vocabulary、**re-parameterize 進模型權重**,推論零額外成本。**Bridging 直接用它的 detection head;它也是 YOLOE (ICCV 2025) 的前身、你即時頭三選一的基準**。
+> **YOLOv8 + CLIP text encoder + 重新設計的 vision-language PAN(RepVL-PAN)** —— **第一個即時開放詞彙偵測器**,LVIS **35.4 AP**、re-param 後 **52 FPS**(V100),比 Grounding DINO **+8 AP、快 35×**。核心創新是 **prompt-then-detect** 範式:提示先編成 offline vocabulary、**re-parameterize 進模型權重**,推論零額外成本。**Bridging 直接用它的 detection head;它也是 YOLOE (ICCV 2025) 的前身**,常被當作即時 OVD head 的比較基準。
 
 ---
 
@@ -17,6 +17,9 @@ flowchart TD
 ```
 
 > **關鍵洞察**:先前 OVD 慢,是因為推論時文字和影像**同時編碼**(online vocabulary)。YOLO-World 把它拆開:**先**把使用者的提示編成固定的 offline vocabulary(**prompt**),**再**當成普通 YOLO 的分類權重去偵測(**detect**)。詞彙固定後,整個 vision-language 融合可 **re-parameterize** 成卷積/線性層權重 → 推論就是一台乾淨 YOLO。
+
+
+*圖:三種偵測範式對比 —— (a) 傳統偵測器用固定詞彙(換類別要重訓);(b) 先前 OVD(GLIP/Grounding DINO)用 online vocabulary,每次推論都得跑 text encoder 而變慢;(c) YOLO-World 的 prompt-then-detect,提示先編成 offline vocabulary 並 re-parameterize 進權重,推論零額外成本。*
 
 ---
 
@@ -38,6 +41,9 @@ flowchart TD
     TCH --> OUT["region-text 相似度 → boxes + labels"]
 ```
 
+
+*圖:YOLO-World 整體架構 —— YOLOv8 backbone 輸出多尺度視覺特徵,凍結的 CLIP text encoder 將名詞提示編為文字 embedding,兩者在 RepVL-PAN 做雙向 vision-language 融合,再由 Text Contrastive Head 輸出 region-text 相似度(boxes + labels)。*
+
 - **YOLO detector**:YOLOv8(Darknet backbone + PAN + head)。
 - **Text Encoder**:CLIP 文字編碼器(**凍結**),$W=\text{TextEncoder}(T)\in\mathbb R^{C\times D}$($C$=名詞數)。用 **n-gram** 從 caption 抽 noun phrases。CLIP 比純文字 encoder 更能連結視覺(§消融證實)。
 - **Text Contrastive Head**:decoupled head + 兩個 $3{\times}3$ conv,回歸 bbox 與 object embedding $e_k$;region-text 相似度
@@ -58,6 +64,9 @@ $$W' = W + \text{MultiHead-Attention}(W, \tilde X, \tilde X)$$
 → **image-aware 的文字 embedding**(不同圖給不同文字表示)。
 
 > **雙向**:T-CSPLayer 讓「視覺懂文字」、I-Pooling 讓「文字懂這張圖」。**推論時 offline vocabulary 固定 → 這些融合可 re-parameterize 成 conv/linear 權重**,零開銷。
+
+
+*圖:RepVL-PAN 的兩個雙向融合模組 —— Text-guided CSPLayer(T-CSPLayer)以 max-sigmoid attention 把文字 guidance 注入視覺特徵(文字→視覺);Image-Pooling Attention(I-Pooling)對多尺度特徵 max-pool 成 27 個 patch token,以 multi-head attention 更新文字 embedding(視覺→文字)。*
 
 ## 訓練:region-text contrastive + 三類資料混訓
 - **online vocabulary**(訓練時):每個 mosaic(4 圖)抽 positive nouns + 隨機採 negative nouns,每 sample 最多 $M{=}80$ nouns。
@@ -85,6 +94,9 @@ $$\mathcal L = \mathcal L_{con} + \lambda_I\cdot(\mathcal L_{iou}+\mathcal L_{df
 
 - **re-param 的威力**:YOLO-World-S 從 77M/19.9 FPS → **13M/74.1 FPS**(參數少 6×、快 3.7×),AP 幾乎不變。
 - YOLO-World-L **35.4 AP** 超越 DetCLIP-T,**推論快 ~20×**;比 Grounding DINO-T **+8 AP、快 35×**。
+
+
+*圖:LVIS minival 上的速度-精度曲線 —— YOLO-World 位於右上帕累托前緣,在相同或更高 AP 下 FPS 遠勝近期開放詞彙偵測器(GLIP、Grounding DINO、DetCLIP 等)。*
 
 ## 消融
 - **pre-train 資料(Table 3)**:O365 23.5 → **+GQA 31.9(+8.4!)** → +GoldG 32.5 → +CC3M 33.0。**富文字的 grounding 資料(GQA)增益最大**。

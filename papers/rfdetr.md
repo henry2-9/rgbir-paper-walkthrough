@@ -35,6 +35,9 @@ flowchart TD
 - **關鍵**:**所有 decoder 層都算 loss** → 推論可 **drop 任意 decoder 層**(甚至砍到 0 層變 single-stage) → NAS 的基礎。
 - **消費級 GPU 友好**:projector 用 layer norm 取代 batch norm + 梯度累積。
 
+
+*Fig 2:RF-DETR 整體架構 —— DINOv2 預訓練 ViT backbone(交錯 windowed / non-windowed attention,抽多尺度特徵)→ projector → Deformable decoder(多層,每層都算 loss)→ 並列的 Detection Head 與輕量 Segmentation Head。*
+
 ## weight-sharing NAS(核心創新,靈感 OFA)
 ```mermaid
 flowchart LR
@@ -53,11 +56,17 @@ flowchart LR
 | d | **影像解析度** | 低(快)← → 高(小物件好) |
 | e | **每 block window 數** | 影響全域資訊混合與效率 |
 
+
+*Fig 3:weight-sharing NAS 的五維搜尋空間 —— patch size、decoder 層數、query 數、影像解析度、每 block window 數;推論時沿這五個 knobs 在 accuracy-latency Pareto 曲線上選點,無需重訓。*
+
 > **精髓**:一個 base network 訓練後,**上面所有點都由同一次訓練導出**(Fig 1 caption 明說);「architecture augmentation」還當 **regularizer 提升泛化**。**這是它對「部署」最實用的貢獻** —— 一次訓練、多硬體零重訓。
 
 ---
 
 # 4. 實驗結果
+
+
+*Fig 1:COCO 上的 accuracy-latency Pareto 曲線(偵測與分割)—— RF-DETR 全系列點都由「同一次 weight-sharing NAS 訓練」導出,不需為每個延遲點重訓;RF-DETR-2XL 於偵測達 60.1 AP,為首個實時破 60 的模型。*
 
 ## COCO 偵測(Table 2,T4 TensorRT10 FP16)
 | Model | Params | GFLOPs | Latency | AP | AP_S | AP_L |

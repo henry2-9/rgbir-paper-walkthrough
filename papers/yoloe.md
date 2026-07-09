@@ -26,6 +26,9 @@ flowchart TD
     CMP --> OUT["boxes + masks(開放詞彙)"]
 ```
 
+
+*圖:YOLOE 架構總覽。共用 YOLO backbone + PAN(P3/P4/P5),接 Segmentation / Regression / Object Embedding 三個頭;object embedding $\mathcal O$ 與 prompt embedding $\mathcal P$ 做 Label $=\mathcal O\cdot\mathcal P^{T}$。三種提示分別對應右下 **RepRTA**(text:Text Encoder → 輔助網路 $f_\theta$ → re-parameterization)、左下 **SAVPE**(visual:Activation + Semantic 雙分支)、右上 **LRPC**(prompt-free:specialized embedding → 內建詞彙 retrieval)。*
+
 ---
 
 # 2. 零推論開銷的核心精神(三模組共通)
@@ -68,6 +71,9 @@ $$K' = R_{C\times D\to C\times D'\times 1\times 1}(f_\theta(P))\circledast K^T$$
 > 一句話:語意分支給「是什麼」的通用特徵、激活分支給「在哪、多重要」的權重,兩者低維聚合成 visual embedding,**不用 transformer**。**消融(Table 6):SAVPE 比單純 mask pooling +1.5 AP;$A{=}16$ 最佳平衡。**
 > **用途**:對「講不出名字」的專門領域目標特別有用(text prompt 描述不出時)。
 
+
+*圖:RepRTA 輔助網路與 SAVPE 分支結構。(a) RepRTA 的輔助網路 $f_\theta$ 就是一個 SwiGLU FFN(雙 Linear 分支經逐元素相乘 $\odot$ 再 Linear),把文字 embedding $P$ 精煉成 $\mathcal P$。(b) SAVPE 雙分支:**語意分支**對 {P3,P4,P5} 各兩層 $3{\times}3$ conv + upsample + concat + $1{\times}1$,輸出 prompt-agnostic 語意特徵 $S\in\mathbb R^{D\times H\times W}$;**激活分支**把 visual prompt 與各層 $1{\times}1$ image 特徵融合成 prompt-aware 權重 $\mathcal W\in\mathbb R^{A\times H\times W}$,兩者 Aggregation 為 visual prompt embedding。*
+
 ## ③ LRPC — prompt-free(Lazy Region-Prompt Contrast)
 **痛點**:prompt-free 要找出**所有**物件並命名;先前用 language model 生成類別名(GRiT 用 FlanT5、DINO-X 用 OPT),開銷大。
 
@@ -95,6 +101,9 @@ $$K' = R_{C\times D\to C\times D'\times 1\times 1}(f_\theta(P))\circledast K^T$$
 - **rare 類(AP_r)增益最大**(v8-S/L +5.2% / +7.6%)—— 開放詞彙的長尾正是價值所在。
 - YOLO11 版(YOLOE-11-S/M/L)亦有 favorable 表現。
 
+
+*圖:YOLOE(橘)vs YOLO-Worldv2(藍)的「性能–訓練成本–推論效率」三面對比(縱軸皆為 LVIS AP)。左:訓練時間 **3× 更短**;中:TensorRT 下 FPS **1.4× 加速**;右:CoreML(端側)下 FPS **1.3× 加速**。YOLOE 三張圖皆落在左上/右上(更省成本、更高精度、更快推論),全面優於 YOLO-World。*
+
 ## 分割(Table 2,LVIS val,AP^m,zero-shot)
 - YOLOE-v8-M/L:**20.8 / 23.5 AP^m**(zero-shot),**勝**在 LVIS-Base 上 fine-tuned 的 YOLO-Worldv2-M/L **+3.0 / +3.7**。
 
@@ -104,6 +113,11 @@ $$K' = R_{C\times D\to C\times D'\times 1\times 1}(f_\theta(P))\circledast K^T$$
 ## COCO 下游遷移(Table 4)
 - **Linear probing**:YOLOE-11-M/L 用 **<2% 訓練時間**達 YOLO11-M/L **80%+** 性能。
 - **Full tuning**:YOLOE-v8-L 達 **52.6 AP^b**,比 closed-set YOLOv8-L **+0.6 AP^b**,且訓練 epoch **少 ~4×**。
+
+## 四種推論場景(定性結果)
+
+
+*圖:YOLOE 四種推論場景(偵測 + 分割 mask 齊出)。(a) LVIS zero-shot:以完整 LVIS 詞彙偵測並分割。(b) 自訂 text prompt:只找指定類別(white hat / sunglasses / red hat / mustache / tie / white car)。(c) visual prompt:用紅色虛線框指定一台筆電為範例 → 找出畫面中所有同類目標(SAVPE)。(d) prompt-free:無需提示自動標出萬物(cloud / sky / airplane / trailer truck / traffic cone …,LRPC)。*
 
 ---
 
