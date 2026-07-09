@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>對比 · Bridging RGB-IR × VL-ACFDet</title>
+<style>
+:root{--ink:#1f2328;--muted:#57606a;--line:#d0d7de;--accent:#0969da;--bg:#f6f8fa;
+--red:#e93147;--orange:#ec7500;--yellow:#e0ac00;--green:#08b94e;--teal:#00bfbc;--purple:#7852ee}
+*{box-sizing:border-box}
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.8}
+nav.top{position:sticky;top:0;z-index:40;background:#ffffffe6;border-bottom:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+nav.top .in{max-width:960px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;font-size:14px;overflow-x:auto;white-space:nowrap}
+nav.top a{color:var(--muted);text-decoration:none;padding:3px 11px;border-radius:999px;transition:color .2s,background .2s}
+nav.top a:hover{color:var(--accent);background:rgba(9,105,218,.07)}
+nav.top a.current{color:var(--accent);font-weight:700;background:rgba(9,105,218,.1)}
+.wrap{max-width:920px;margin:0 auto;padding:34px 20px 90px}
+@keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.anim{animation:riseIn .5s ease backwards}
+h1.pg{font-size:1.65rem;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 24px;font-size:.95rem}
+.vs{display:grid;grid-template-columns:1fr 44px 1fr;gap:10px;align-items:stretch;margin-bottom:14px}
+.pcard{border:2px solid;border-radius:16px;padding:16px 18px;background:#fff}
+.pcard.a{border-color:var(--teal);background:#f4fbfb}
+.pcard.b{border-color:var(--purple);background:#f8f6fe}
+.pcard h2{font-size:1.05rem;margin:0 0 6px}
+.pcard .venue{font-size:.75rem;font-weight:700;border-radius:999px;padding:2px 10px;display:inline-block;margin-bottom:8px}
+.pcard.a .venue{background:rgba(0,191,188,.14);color:#00807e}
+.pcard.b .venue{background:rgba(120,82,238,.14);color:#5a3bc4}
+.pcard p{margin:0;font-size:.86rem;color:#39424d}
+.vsmark{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);font-size:1.2rem}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.links a{font-size:.8rem;color:var(--accent);text-decoration:none;border:1px solid rgba(9,105,218,.3);border-radius:999px;padding:3px 10px}
+.links a:hover{background:rgba(9,105,218,.08)}
+.card{border:1px solid var(--line);border-radius:16px;padding:20px 20px 18px;margin:22px 0;background:linear-gradient(180deg,#fbfcfd,#fff);box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.card h2{font-size:1.15rem;margin:0 0 4px}
+.card .hint{font-size:.85rem;color:var(--muted);margin:0 0 16px}
+.spec{position:relative;height:64px;margin:26px 8px 6px}
+.spec .rail{position:absolute;left:0;right:0;top:30px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--orange),var(--accent))}
+.spec .endl{position:absolute;top:46px;font-size:.78rem;color:var(--muted)}
+.spec .endl.l{left:0}.spec .endl.r{right:0}
+.mk{position:absolute;top:12px;transform:translateX(-50%);cursor:pointer;text-align:center;border:none;background:none;font-family:inherit;padding:0}
+.mk .dot{width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.3);margin:0 auto;transition:transform .15s}
+.mk .lb{font-size:.74rem;font-weight:700;white-space:nowrap;margin-top:22px;color:var(--muted)}
+.mk:hover .dot{transform:scale(1.2)}
+.mk.on .dot{transform:scale(1.35);box-shadow:0 0 0 4px rgba(9,105,218,.2)}
+.mk.on .lb{color:var(--ink)}
+.specpanel{margin-top:14px;border-left:4px solid var(--accent);background:#f0f7ff;border-radius:0 10px 10px 0;padding:12px 16px;font-size:.9rem}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+.pill{appearance:none;font-family:inherit;font-size:.88rem;border:1.5px solid var(--line);background:#fff;color:var(--ink);padding:6px 15px;border-radius:999px;cursor:pointer;transition:all .15s}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.duo .side{border-radius:12px;padding:13px 15px;font-size:.88rem;border:1.5px solid}
+.duo .side.a{border-color:rgba(0,191,188,.5);background:#f4fbfb}
+.duo .side.b{border-color:rgba(120,82,238,.45);background:#f8f6fe}
+.duo .side h3{margin:0 0 6px;font-size:.92rem}
+.duo .side.a h3{color:#00807e}
+.duo .side.b h3{color:#5a3bc4}
+.duo .side p{margin:0}
+.takeaway{margin-top:12px;font-size:.87rem;color:#39424d;background:var(--bg);border-radius:10px;padding:10px 14px}
+.takeaway b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;display:block;overflow-x:auto;font-size:.87rem}
+th,td{border:1px solid var(--line);padding:.5em .8em;text-align:left;min-width:110px}
+th{background:var(--bg)}
+td.ca{background:#f4fbfb}td.cb{background:#f8f6fe}
+.dna{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.dna .d{border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:.85rem;background:#fff}
+.dna .d b{display:block;margin-bottom:3px}
+.note{margin-top:26px;padding:12px 16px;background:#fff8ec;border:1px solid #f0d9ac;border-left:4px solid var(--orange);border-radius:0 10px 10px 0;font-size:.84rem;color:#6b5218}
+@media(max-width:640px){.vs{grid-template-columns:1fr}.vsmark{transform:rotate(90deg);padding:2px 0}.duo{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}html{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<nav class="top"><div class="in">
+<a href="index.html">⌂ 首頁</a>
+<a href="slides.html">🎞 簡報</a>
+<a href="map.html">🗺 地圖</a>
+<a href="playground.html">🧪 實驗室</a>
+<a href="papers.html">📚 論文庫</a>
+<a href="compare.html" class="current" aria-current="page">⚖️ 對比</a>
+<a href="walkthrough.html">📖 全文</a>
+</div></nav>
+<div class="wrap">
+<h1 class="pg anim">⚖️ Bridging RGB-IR × VL-ACFDet</h1>
+<p class="sub anim" style="animation-delay:.05s">同一個問題——惡劣天候下的 RGB-IR 多光譜偵測——兩種「視覺-語言模型怎麼用」的哲學。逐維度對照,互相照亮彼此的設計選擇。</p>
+
+<div class="vs anim" style="animation-delay:.1s">
+<div class="pcard a">
+<span class="venue">IEEE MultiMedia 2025</span>
+<h2>🌦 VL-ACFDet</h2>
+<p>雙流 YOLOv5 mid-fusion。<b>AC-CA</b> 先空間對齊(SFS)再融合;<b>VL-CAT</b> 用凍結 CLIP 當老師,把「模態品質」語意蒸餾進 channel attention——<b>CLIP 只在訓練期</b>。閉集類別。</p>
+<div class="links"><a href="papers.html">📚 導讀+互動 demo</a></div>
+</div>
+<div class="vsmark">×</div>
+<div class="pcard b">
+<span class="venue">2026</span>
+<h2>🌉 Bridging the RGB-IR Gap</h2>
+<p>CSPDarknet(RGB)+ LiteDCTGhost(IR)。<b>文字當共享語意橋</b>:RGB/IR 各自回答文字的「提問」,Bi-Support 拆共識/差異再重校準——<b>文字在推論期常駐</b>。開放詞彙。</p>
+<div class="links"><a href="map.html">🗺 架構地圖</a><a href="playground.html">🧪 Bi-Support 實驗</a></div>
+</div>
+</div>
+
+<div class="card anim" style="animation-delay:.15s">
+<h2>🕐 最大分歧:VLM 的「時機」</h2>
+<p class="hint">點光譜上的圓點——三種把 CLIP/LLM 拉進偵測器的方式,付出成本的時機完全不同。</p>
+<div class="spec">
+<div class="rail"></div>
+<button class="mk on" style="left:12%" data-k="vlcat"><span class="dot" style="background:var(--teal)"></span><span class="lb">VL-CAT</span></button>
+<button class="mk" style="left:30%" data-k="llmdet"><span class="dot" style="background:var(--orange)"></span><span class="lb">LLMDet</span></button>
+<button class="mk" style="left:82%" data-k="bridge"><span class="dot" style="background:var(--purple)"></span><span class="lb">Semantic-Bridge</span></button>
+<span class="endl l">🏋️ 只在訓練期</span>
+<span class="endl r">🚀 推論期常駐</span>
+</div>
+<div class="specpanel" id="specpanel"></div>
+</div>
+
+<div class="card anim" style="animation-delay:.2s">
+<h2>🔍 逐維度對照</h2>
+<p class="hint">切換維度,看兩篇在同一件事上的不同答案。</p>
+<div class="pills" id="dims"></div>
+<div class="duo">
+<div class="side a"><h3>🌦 VL-ACFDet</h3><p id="dimA"></p></div>
+<div class="side b"><h3>🌉 Bridging</h3><p id="dimB"></p></div>
+</div>
+<div class="takeaway" id="dimT"></div>
+</div>
+
+<div class="card anim" style="animation-delay:.25s">
+<h2>📋 對照總表</h2>
+<table>
+<thead><tr><th>維度</th><th>VL-ACFDet (2025)</th><th>Bridging RGB-IR (2026)</th></tr></thead>
+<tbody>
+<tr><td>骨幹</td><td class="ca">雙流 YOLOv5s(對稱)</td><td class="cb">CSPDarknet(RGB)+ LiteDCTGhost(IR 專用,1.05M)</td></tr>
+<tr><td>融合層級</td><td class="ca">mid-fusion,最後三層插 AC-CA/VL-CAT</td><td class="cb">mid-fusion,文字當共享 Q 的語意橋</td></tr>
+<tr><td>模態不一致</td><td class="ca">像素空間:SFS 預測偏移 + bicubic 重採樣</td><td class="cb">語意空間:Bi-Support 拆 M_cons / M_dis</td></tr>
+<tr><td>CLIP 的角色</td><td class="ca">老師(訓練期蒸餾,推論退場)</td><td class="cb">文字編碼器(凍結,推論期供 prompt)</td></tr>
+<tr><td>詞彙</td><td class="ca">閉集(固定類別)</td><td class="cb">開放詞彙(換 prompt 免重訓)</td></tr>
+<tr><td>推論負擔</td><td class="ca">無 CLIP 級開銷(通道分支 +3.6% 參數、FPS 47.1→46.5)</td><td class="cb">文字橋比視覺互查省(成本 4NMC vs 4N²C)</td></tr>
+<tr><td>效能亮點</td><td class="ca">AC-CA:參數 44.5→34.7M、FPS 47.1→52</td><td class="cb">LiteDCTGhost:參數 −95%、mAP 0.453→0.504</td></tr>
+<tr><td>主打場景</td><td class="ca">M³FD Adverse 84.58% 最高 + 自建日/夜/雨霧(43,420 對)</td><td class="cb">黑暗場景 M_dis 救援(RGB 失效、IR 獨家線索)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card anim" style="animation-delay:.3s">
+<h2>🧬 共同 DNA</h2>
+<div class="dna">
+<div class="d"><b>🌧 惡劣天候是主戰場</b>兩篇都以夜間/雨霧為核心情境,靠 IR 補 RGB 的失效。</div>
+<div class="d"><b>❄️ CLIP 都是凍結的</b>誰都沒 fine-tune CLIP——差別只在用它的時機與方式。</div>
+<div class="d"><b>⚡ 聰明設計 &gt; 堆算力</b>AC-CA 融合後參數反降;LiteDCTGhost 砍 95% 參數精度反升。</div>
+<div class="d"><b>🎯 都選 YOLO 系即時頭</b>邊緣可部署是共同前提,不走大模型推論。</div>
+</div>
+</div>
+
+<div class="note">📚 本頁整理自兩篇已發表論文的站內導讀(<a href="papers.html">VL-ACFDet</a> · <a href="walkthrough.html">Bridging 白話版</a>),為個人學習筆記、非官方比較;引用請以原論文為準。</div>
+</div>
+<script>
+const SPEC = {
+  vlcat: '<b>VL-CAT(VL-ACFDet)</b>:凍結 CLIP 以 4 個「模態品質」prompt 當老師,L2 蒸餾進 backbone 最後三層的 channel attention。<b>推論時 CLIP 整個退場</b>,只留學好的輕量通道分支(+3.6% 參數、FPS 47.1→46.5)——「無 CLIP 級開銷」。',
+  llmdet: '<b>LLMDet(對照組)</b>:LLM 當訓練家教,雙任務 captioning 監督 detector;<b>推論時 LLM 完全丟棄、0% 額外開銷</b>。與 VL-CAT 同屬「訓練期借語意」哲學,但蒸餾媒介是 caption 而非 channel attention。詳見 <a href="walkthrough.html">全文 Part 6</a>。',
+  bridge: '<b>Semantic-Bridge(Bridging)</b>:文字 prompt 在<b>推論期常駐</b>——CLIP 文字編碼器(凍結)把類別編成共享 Q,RGB/IR 各自回答,Bi-Support 拆出共識與差異。付常駐成本的回報:<b>開放詞彙</b>(換 prompt 免重訓),且文字當橋比視覺互查省(4NMC vs 4N²C)。試玩 <a href="playground.html">Bi-Support 實驗</a>。'
+};
+const DIMS = [
+  {k:'align', label:'模態不一致', a:'<b>在像素空間解</b>:SFS 直接預測兩模態的空間偏移,bicubic 重採樣把 IR「搬回」對齊位置,再交給 CFE 正規化、CAF 融合——硬體沒裝正也能救。', b:'<b>在語意空間解</b>:不搬像素,而是讓 RGB/IR 各自回答文字的提問,把 IR 響應無損拆成「共識 M_cons」與「差異 M_dis」,對不一致的訊號給可學的信任度(α gate)。', t:'一個修「位置錯位」,一個修「語意分歧」——兩種不一致都真實存在,解法互補而不衝突。'},
+  {k:'text', label:'文字的用法', a:'文字是<b>品質評審</b>:4 個 prompt 問 CLIP「此刻哪個模態可信」,答案蒸餾進通道注意力。訓練完,文字功成身退。', b:'文字是<b>共同語言</b>:類別名編成 Q,同一份 Q 問 RGB 也問 IR——兩個視覺模態透過文字對話。推論每一幀都在用。', t:'同一個 CLIP,一個拿來「評模態」、一個拿來「橋模態」。時機不同,能力也不同:前者換類別要重訓,後者換 prompt 就好。'},
+  {k:'ir', label:'IR 的待遇', a:'<b>對稱雙流</b>:IR 與 RGB 用同款 YOLOv5 backbone,靠 AC-CA/VL-CAT 在融合時校正模態差異。', b:'<b>專用輕量骨幹</b>:LiteDCTGhost 用 DCT 把 IR 拆低頻(熱分布)/高頻(輪廓)分支處理,1.05M 參數比 ResNet50 少 95%、mAP 反升(0.453→0.504)。', t:'IR 的訊號結構跟 RGB 不同(低頻主導、紋理稀少)——給它量身骨幹是 Bridging 的加碼答案;VL-ACFDet 則把資源投在融合層。'},
+  {k:'vocab', label:'詞彙能力', a:'<b>閉集</b>:類別固定(行人/機車/汽車等),分類頭是傳統輸出;換類別需要重訓。', b:'<b>開放詞彙</b>:YOLO-World 風格 head,分類 = 視覺特徵與文字 embedding 算 cosine;換 prompt 即換類別,zero-shot 新類。', t:'這是「文字在不在推論期」的直接後果:VL-CAT 把文字用完就丟,自然回到閉集;Semantic-Bridge 讓文字常駐,才能開放詞彙。'},
+  {k:'cost', label:'效能哲學', a:'融合模組<b>反而更省</b>:AC-CA 取代標準 transformer 後參數 44.5→34.7M、FPS 47.1→52(SFS 去冗餘);VL-CAT 只留 +3.6% 參數的通道分支。', b:'<b>橋比直連省</b>:RGB↔IR 直接 cross-attention 是 N² 級,文字當中介降為 N·M(類別數 M 很小);IR 骨幹再砍 95% 參數。', t:'兩篇同一句潛台詞:多光譜融合不必然昂貴——找對歸納偏誤,精度與速度可以同時要。'},
+];
+const specPanel = document.getElementById('specpanel');
+document.querySelectorAll('.mk').forEach(mk => mk.addEventListener('click', () => {
+  document.querySelectorAll('.mk').forEach(m => m.classList.toggle('on', m===mk));
+  specPanel.innerHTML = SPEC[mk.dataset.k];
+}));
+specPanel.innerHTML = SPEC.vlcat;
+const dims = document.getElementById('dims');
+DIMS.forEach((d,i) => {
+  const b = document.createElement('button');
+  b.className = 'pill' + (i===0?' on':''); b.textContent = d.label; b.dataset.k = d.k;
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p===b));
+    render(d);
+  });
+  dims.appendChild(b);
+});
+function render(d){
+  document.getElementById('dimA').innerHTML = d.a;
+  document.getElementById('dimB').innerHTML = d.b;
+  document.getElementById('dimT').innerHTML = '💡 ' + d.t;
+}
+render(DIMS[0]);
+</script>
+</body>
+</html>

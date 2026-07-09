@@ -6,6 +6,7 @@
 - 🎞 [簡報模式](slides.html) — reveal.js,約 55 頁
 - 🧪 [互動實驗室](playground.html) — Bi-Support 滑桿實驗、DCT 頻率拆解、sigmoid vs softmax、20 題翻卡測驗
 - 🗺 [架構地圖](map.html) — 可縮放的 pipeline 資料流圖(含 ▶ 19 步導覽模式)
+- ⚖️ [對比](compare.html) — Bridging RGB-IR × VL-ACFDet:VLM 時機光譜 + 五維度互動對照
 - 📖 [白話版全文](walkthrough.html) — Part 0–7 完整講解
 - 📚 [論文庫](papers.html) — 六篇論文導讀(VL-ACFDet / YOLOE / YOLO-World / RT-DETR / RF-DETR / EventGPT),每篇附互動實驗
 
