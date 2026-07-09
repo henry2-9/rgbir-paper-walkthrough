@@ -73,7 +73,7 @@ article a{color:var(--accent)}
 </div></nav>
 <div class="wrap">
 <h1 class="pg anim">📚 論文庫</h1>
-<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方六篇論文導讀,其中五篇附可動手玩的互動實驗。</p>
+<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方六篇論文導讀,**每篇都附可動手玩的互動實驗**。</p>
 <div class="disclaim anim" style="animation-delay:.1s">⚠️ 標示「AI 導讀」的分頁為 <strong>AI 輔助整理</strong>(尚未逐字精讀原文);VL-ACFDet 為已精讀筆記。重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
 
 <div class="deepdive anim" style="animation-delay:.15s">
@@ -129,6 +129,7 @@ article a{color:var(--accent)}
 </div>
 
 <div id="loading">載入中…</div>
+<div id="demo-vlacfdet" class="demoblock on"></div>
 <article id="p-vlacfdet" class="on"></article>
 <div id="demo-yoloe" class="demoblock"></div>
 <article id="p-yoloe"></article>
@@ -180,12 +181,14 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
 <script src="papers/demo-rtdetr.js"></script>
 <script src="papers/demo-rfdetr.js"></script>
 <script src="papers/demo-yoloworld.js"></script>
+<script src="papers/demo-vlacfdet.js"></script>
 <script>
 if (window.initYoloeDemo) initYoloeDemo(document.getElementById('demo-yoloe'));
 if (window.initEventgptDemo) initEventgptDemo(document.getElementById('demo-eventgpt'));
 if (window.initRtdetrDemo) initRtdetrDemo(document.getElementById('demo-rtdetr'));
 if (window.initRfdetrDemo) initRfdetrDemo(document.getElementById('demo-rfdetr'));
 if (window.initYoloworldDemo) initYoloworldDemo(document.getElementById('demo-yoloworld'));
+if (window.initVlacfdetDemo) initVlacfdetDemo(document.getElementById('demo-vlacfdet'));
 </script>
 </body>
 </html>
