@@ -24,6 +24,7 @@ PAPERS = {
     "rtdetr.md": "Papers/00_主論文/RT-DETR (CVPR 2024).md",
     "rfdetr.md": "Papers/00_主論文/RF-DETR (ICLR 2026).md",
     "eventgpt.md": "Papers/00_主論文/EventGPT (CVPR 2025).md",
+    "siglip2.md": "Papers/02_視覺語言預訓練/SigLIP 2 (2025).md",
 }
 
 RETITLE = {

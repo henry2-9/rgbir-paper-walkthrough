@@ -74,7 +74,7 @@ article a{color:var(--accent)}
 </div></nav>
 <div class="wrap">
 <h1 class="pg anim">📚 論文庫</h1>
-<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方六篇論文導讀,**每篇都附可動手玩的互動實驗**。</p>
+<p class="sub anim" style="animation-delay:.05s">研究地圖上的論文解讀。兩篇核心有完整互動走讀;下方七篇論文導讀,<strong>每篇都附可動手玩的互動實驗</strong>。</p>
 <div class="disclaim anim" style="animation-delay:.1s">⚠️ 標示「AI 導讀」的分頁為 <strong>AI 輔助整理</strong>(尚未逐字精讀原文);VL-ACFDet 為已精讀筆記。重點與數字整理自論文與官方資料,引用請一律以原論文為準。</div>
 
 <div class="deepdive anim" style="animation-delay:.15s">
@@ -97,6 +97,7 @@ article a{color:var(--accent)}
 <button class="tab" data-p="rtdetr" role="tab" aria-selected="false">⚡ RT-DETR (CVPR 2024)</button>
 <button class="tab" data-p="rfdetr" role="tab" aria-selected="false">🏗 RF-DETR (ICLR 2026)</button>
 <button class="tab" data-p="eventgpt" role="tab" aria-selected="false">📸 EventGPT (CVPR 2025)</button>
+<button class="tab" data-p="siglip2" role="tab" aria-selected="false">🔤 SigLIP 2 (2025)</button>
 </div>
 
 <div class="pmeta" id="meta-vlacfdet">
@@ -129,6 +130,11 @@ article a{color:var(--accent)}
 <a href="https://arxiv.org/abs/2304.08069" target="_blank" rel="noopener">arXiv 2304.08069</a>
 <a href="https://github.com/lyuwenyu/RT-DETR" target="_blank" rel="noopener">GitHub</a>
 </div>
+<div class="pmeta" id="meta-siglip2" hidden>
+<span class="badge b-venue">arXiv 2025 · Google DeepMind</span><span class="badge b-status">AI 導讀</span>
+<a href="https://arxiv.org/abs/2502.14786" target="_blank" rel="noopener">arXiv 2502.14786</a>
+<a href="https://github.com/google-research/big_vision" target="_blank" rel="noopener">GitHub</a>
+</div>
 
 <div id="loading">載入中…</div>
 <div id="demo-vlacfdet" class="demoblock on"></div>
@@ -143,6 +149,8 @@ article a{color:var(--accent)}
 <article id="p-yoloworld"></article>
 <div id="demo-rfdetr" class="demoblock"></div>
 <article id="p-rfdetr"></article>
+<div id="demo-siglip2" class="demoblock"></div>
+<article id="p-siglip2"></article>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
@@ -155,7 +163,7 @@ renderer.code = function (code, lang) {
 };
 marked.setOptions({renderer, mangle:false, headerIds:false, gfm:true});
 mermaid.initialize({startOnLoad:false, theme:'neutral'});
-const papers = ['vlacfdet','yoloe','yoloworld','rtdetr','rfdetr','eventgpt'];
+const papers = ['vlacfdet','yoloe','yoloworld','rtdetr','rfdetr','eventgpt','siglip2'];
 function renderMermaidIn(article) {
   const nodes = article.querySelectorAll('pre.mermaid:not([data-processed])');
   if (nodes.length) mermaid.run({nodes}).catch(e => console.warn('mermaid:', e));
@@ -184,6 +192,7 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
 <script src="papers/demo-rfdetr.js"></script>
 <script src="papers/demo-yoloworld.js"></script>
 <script src="papers/demo-vlacfdet.js"></script>
+<script src="papers/demo-siglip2.js"></script>
 <script>
 if (window.initYoloeDemo) initYoloeDemo(document.getElementById('demo-yoloe'));
 if (window.initEventgptDemo) initEventgptDemo(document.getElementById('demo-eventgpt'));
@@ -191,6 +200,7 @@ if (window.initRtdetrDemo) initRtdetrDemo(document.getElementById('demo-rtdetr')
 if (window.initRfdetrDemo) initRfdetrDemo(document.getElementById('demo-rfdetr'));
 if (window.initYoloworldDemo) initYoloworldDemo(document.getElementById('demo-yoloworld'));
 if (window.initVlacfdetDemo) initVlacfdetDemo(document.getElementById('demo-vlacfdet'));
+if (window.initSiglip2Demo) initSiglip2Demo(document.getElementById('demo-siglip2'));
 </script>
 </body>
 </html>
