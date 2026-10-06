@@ -14,11 +14,11 @@ SITE = pathlib.Path(__file__).resolve().parent.parent / "papers"
 # 研究策略段落(h1 標題比對)——一律剝除
 STRIP = re.compile(
     r"對你研究|為什麼讀這篇|為什麼讀\(|For My Work|可借鏡|還沒搞懂|想驗證"
-    r"|跨領域對照|邊緣端應用探討|與 RGB-IR 整合探討"
+    r"|跨領域對照|邊緣端應用探討|與 RGB-IR 整合探討|對我研究|對本研究"
 )
 
 PAPERS = {
-    "vlacfdet.md": "Papers/00_主論文/VL-ACFDet (IEEE MM 2025).md",
+    "vlacfdet.md": "Papers/04_RGB-T偵測/04_語言引導/VL-ACFDet (IEEE MM 2025).md",
     "yoloe.md": "Papers/00_主論文/YOLOE (ICCV 2025).md",
     "yoloworld.md": "Papers/00_主論文/YOLO-World (CVPR 2024).md",
     "rtdetr.md": "Papers/00_主論文/RT-DETR (CVPR 2024).md",
@@ -84,6 +84,23 @@ ALLOW_SNIPPETS = [
     "為你的資料集訂做",         # rfdetr:論文自己的口號(泛稱)
 ]
 
+# marked 4.3.0 對 CJK 標點旁的 ** 與成對的單一 ~ 解析有誤;這些檔改輸出 <strong> 並跳脫 ~
+HTML_SAFE = {"siglip2.md"}
+
+def html_safe(t):
+    out, fence = [], False
+    for line in t.split("\n"):
+        if line.lstrip().startswith("```"):
+            fence = not fence
+        if fence or line.lstrip().startswith("```"):
+            out.append(line); continue
+        segs = line.split("`")
+        for k in range(0, len(segs), 2):          # 只改行內 code 以外的片段
+            seg = re.sub(r"\*\*([^*\n$]+?)\*\*", r"<strong>\1</strong>", segs[k])
+            segs[k] = re.sub(r"(?<!\\)~", r"\\~", seg)
+        out.append("`".join(segs))
+    return "\n".join(out)
+
 def strip_frontmatter(t):
     if t.startswith("---"):
         end = t.find("\n---", 3)
@@ -113,11 +130,14 @@ def transform(src, out):
     t = re.sub(r"\[\[([^\]|#]+)\|([^\]]+)\]\]", r"\2", t)
     t = re.sub(r"\[\[([^\]|#]+)\]\]", r"\1", t)
     t = re.sub(r"\*\*\(([a-d])\)\*\*", r"(\1)", t)   # 枚舉標記去粗體(CJK 句讀後 marked 解析失敗)
+    t = re.sub(r"(?m)^> ⚠️ 本筆記由[^\n]*\n(?:>[ \t]*\n)?", "", t)   # 筆記製作說明不上站
     for old, new in PATCHES.get(out, []):
         if old in t:
             t = t.replace(old, new, 1)
         else:
             print(f"⚠️ {out}: 補丁失配(原文可能已改),請人工複核 → {old[:40]}…")
+    if out in HTML_SAFE:
+        t = html_safe(t)
     t = re.sub(r"\n{4,}", "\n\n\n", t)
     (SITE / out).write_text(t)
 
